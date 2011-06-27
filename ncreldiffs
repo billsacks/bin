@@ -35,10 +35,10 @@
 # default as of 3-24-10 is summarize_all_times=True. This means that
 # the summary is taken across all time steps of each variable.
 
-# This script uses ncreldiffs.awk, ncbo_all and quick_look.ncl. The
-# paths of these are given below, in the section, "Set some parameters
-# here". Note that ncbo_all also requires ncbo to be installed, and
-# quick_look.ncl requires ncl.
+# This script uses ncreldiffs.awk, mins_and_maxes, ncbo_all and
+# quick_look.ncl. The paths of these are given below, in the section,
+# "Set some parameters here". Note that ncbo_all also requires ncbo to
+# be installed, and quick_look.ncl requires ncl.
 
 # For information on the usage (i.e., command-line arguments), see the
 # "Usage" function below.
@@ -56,6 +56,12 @@ if [ -z "$ncreldiffs_awk_path" ]; then
     ncreldiffs_path=`which ncreldiffs`
     ncreldiffs_dir=`dirname $ncreldiffs_path`
     export ncreldiffs_awk_path=${ncreldiffs_dir}/ncreldiffs.awk
+fi
+
+# Full path of the mins_and_maxes script:
+# (the following works if mins_and_maxes is in your path; if not, set the mins_and_maxes variable manually)
+if [ -z "$mins_and_maxes_path" ]; then
+    export mins_and_maxes_path=`which mins_and_maxes`
 fi
 
 # Full path of the ncbo_all script:
@@ -208,9 +214,10 @@ rm ${ql_expt_magnitude_file}.vars.txt
 rm ${ql_diff_file}.vars.txt
 
 # Make the full summary file, containing differences, average magnitude, and relative differences:
-awk -f $ncreldiffs_awk_path -v first_data_col=$ql_first_data_col -v magfile=${ql_magnitude_file}.txt -v expt_magfile=${ql_expt_magnitude_file}.txt -v abscol=$ql_avg_abs_col -v summary_outfile="${output_file}.summary" ${ql_diff_file}.txt > $output_file
+awk -f $ncreldiffs_awk_path -v first_data_col=$ql_first_data_col -v magfile=${ql_magnitude_file}.txt -v expt_magfile=${ql_expt_magnitude_file}.txt -v abscol=$ql_avg_abs_col ${ql_diff_file}.txt > $output_file
 
-# Print the summary of the summary file to the screen:
+# Make the summary of the summary file, and print it to the screen:
+$mins_and_maxes_path -v first_col=$ql_first_data_col -v ignore_re='^NA$' $output_file > ${output_file}.summary
 cat ${output_file}.summary
 
 # Remove intermediate files (but note that we do not remove the *_sbt.nc files created by ncbo_all):

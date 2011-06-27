@@ -16,9 +16,6 @@
 #      these are the magnitudes used to calculate relative differences
 #  - expt_magfile: name of the expt_magnitudes file from ncreldiffs
 #  - abscol: index of the average_abs column in the magnitudes files (both magfile and expt_magfile)
-#  - summary_outfile: name of file to which we output a short summary,
-#    giving the mins & maxes over each of the relative difference
-#    columns
 
 # Header row:
 NR==1 {
@@ -31,10 +28,6 @@ NR==1 {
     for (i=first_data_col; i<=NF; i++) 
 	printf "%12s_Rel", $i
     printf "\n"
-
-    # Save the column names & number of columns for later use (in the END block):
-    split($0, colnames)
-    ncols = NF
 
     # Get & discard header line from the magfile & expt_magfile:
     getline mag_summary < magfile
@@ -59,8 +52,7 @@ NR>1 {
     expt_avgmag = expt_mag_summary_arr[abscol]
     printf "%19s", expt_avgmag
 
-    # Then calculate and print the relative values;
-    # also track min & max of each relative value column
+    # Then calculate and print the relative values
     # Note that 'i' refers to the column number, and '$i' refers to the data in that column
     for (i=first_data_col; i<=NF; i++) {
 	if (avgmag == 0)
@@ -68,45 +60,9 @@ NR>1 {
 	else  {
 	    relval = $i/avgmag
 	    printf "%16.7g", relval
-
-	    # Track mins & maxes
-	    if (i in mins) {  # we have an existing min for this column
-		if (relval < mins[i])
-		    mins[i] = relval
-	    }
-	    else  # no min yet for this column
-		mins[i] = relval
-
-	    if (i in maxes) {  # we have an existing max for this column
-		if (relval > maxes[i])
-		    maxes[i] = relval
-	    }
-	    else  # no max yet for this column
-		maxes[i] = relval
 	}
     }
 
     printf "\n"
 }
 
-# Print mins & maxes to <summary_outfile>:
-END {
-    # Print header:
-    printf "%9s", " " > summary_outfile
-    for (i=first_data_col; i<=ncols; i++) 
-	printf("%12s_Rel", colnames[i]) > summary_outfile
-    printf("\n") > summary_outfile
-
-    # Print minimums:
-    printf("MINIMUMS:") > summary_outfile
-    for (i=first_data_col; i<=ncols; i++)
-	printf("%16.7g", mins[i]) > summary_outfile
-    printf("\n") > summary_outfile
-
-    # Print maximums:
-    printf("MAXIMUMS:") > summary_outfile
-    for (i=first_data_col; i<=ncols; i++)
-	printf("%16.7g", maxes[i]) > summary_outfile
-    printf("\n") > summary_outfile
-
-}    
