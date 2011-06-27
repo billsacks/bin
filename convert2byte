@@ -1,0 +1,82 @@
+#!/bin/bash
+
+# Bill Sacks
+# 3-6-09
+
+# This script converts a variable in a NetCDF file to byte type.
+# It can also change the missing_value and _FillValue attributes for you,
+# as well as handling the conversion of other attributes to byte type, if desired.
+
+function Usage {
+    echo "Usage: $0 infile varname outfile [attname ...]"
+    echo "infile: Input NetCDF file name"
+    echo "varname: Name of variable to convert to byte type"
+    echo "outfile: Output NetCDF file name"
+    echo "attname... : If provided, one or more attributes of <varname>; these attributes will also be converted to byte type"
+    echo ""
+    echo "The following are optional arguments:"
+    echo "[-m missval]: Change the missing_value and _FillValue attributes to <missval>."
+    echo "              This will also change any missing data values to <missval>,"
+    echo "              BUT ONLY IF _FillValue IS SET BEFORE RUNNING THIS SCRIPT!"
+    echo "              IMPORTANT NOTE: If no -m option is specified, then we delete the"
+    echo "              missing_value and _FillValue attributes of <varname>."
+    exit 1
+}
+
+# -----------------------------
+# Set default values
+# -----------------------------
+missval=
+
+# -----------------------------
+# Handle command-line arguments
+# -----------------------------
+
+while getopts m: opt
+do
+    case $opt in
+	m) missval=$OPTARG;;
+	\?) Usage
+    esac
+done
+
+# shift off the arguments we read with getopts:
+shift `expr $OPTIND - 1`
+
+if [[ $# -lt 3 ]]; then
+    Usage
+fi
+
+infile=$1
+varname=$2
+outfile=$3
+shift 3    # shift off those three arguments
+
+# -----------------------------
+# If a missing data value is given, set missing_value and _FillValue;
+# otherwise, delete missing_value and _FillValue attributes
+# -----------------------------
+
+if [ -n "$missval" ]; then
+    ncatted -a missing_value,$varname,o,b,$missval -a _FillValue,$varname,o,b,$missval $infile $outfile.tmp.$$
+else
+    ncatted -a missing_value,$varname,d,, -a _FillValue,$varname,d,, $infile $outfile.tmp.$$
+fi
+
+# -----------------------------
+# Convert data to byte type
+# -----------------------------
+
+ncap2 -s "$varname=byte($varname)" $outfile.tmp.$$ $outfile
+rm $outfile.tmp.$$
+
+# -----------------------------
+# Change other attributes to byte type, if desired
+# -----------------------------
+
+while (( $# > 0 )); do  # loop through remaining command-line arguments
+    att=$1
+    ncap2 -A -s "${varname}@$att = byte(${varname}@$att)" $outfile $outfile
+    shift
+done
+    
