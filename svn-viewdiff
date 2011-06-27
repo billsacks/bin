@@ -132,14 +132,29 @@ file1="$1"; shift;
 file2="$1"; shift;
 
 # WJS (1-13-11): Create links to the actual files, with meaningful
-# names
+# names. 
+
+# First create a temporary directory to hold these links
 tmp=$(mktemp -d /tmp/viewdiff.links.XXXX)
-mkdir $tmp/left
-mkdir $tmp/right
+
+# Now create a sub-directory for the first file. 
+# Note that we put it in a "left" subdirectory so there aren't
+# collisions with the second file.
+# Note also that we need to explicitly create a directory structure
+# based on the directory part of label[0]; otherwise the 'ln' command
+# will fail for files in anything but the top-level directory.
+dir=`dirname ${label[0]}`
+mkdir -p $tmp/left/$dir
 ln "${file1}" "${tmp}/left/${label[0]}"
 file1="${tmp}/left/${label[0]}"
+
+# Now the same, but for the second file.
+dir=`dirname ${label[1]}`
+mkdir -p $tmp/right/$dir
 ln "${file2}" "${tmp}/right/${label[1]}"
 file2="${tmp}/right/${label[1]}"
+
+# Done creating links to the actual files with meaningful names
 
 ##
 # Do The Right Thing
