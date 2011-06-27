@@ -9,8 +9,11 @@
 #
 # The starting point for the branch will be the tag name of the
 # current directory, unless another URL is specified.
+#
+# Usage: svn-make_ccsm_branch branch_name description
+#
+# Run 'svn-make_ccsm_branch -h' to get more detailed usage.
 
-# Usage: svn_create_ccsm_branch branch_name description
 
 # ----------------------------------------------------------------------
 # SOURCE EXTERNAL FUNCTIONS
@@ -53,6 +56,8 @@ function Usage {
     echo "The following are optional arguments:"
     echo "[-d]: Do a dry run: echo svn commands that would be done,"
     echo "      but don't execute them."
+    echo ""
+    echo "[-h]: Print this help message and exit"
     echo ""
     echo "[-s]: After creating the new branch, svn switch the current"
     echo "      directory to this branch."
@@ -113,12 +118,13 @@ dryrun=0
 switch=0
 source_url=""
 
-while getopts dsu: opt; do
+while getopts dhsu: opt; do
     case $opt in
 	d) dryrun=1;;
+	h) Usage; exit;;
 	s) switch=1;;
 	u) source_url=$OPTARG;;
-	\?) Usage
+	\?) Usage; exit 1
     esac
 done
 
