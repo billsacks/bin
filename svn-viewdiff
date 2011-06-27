@@ -47,6 +47,9 @@ usage ()
   echo "    ${program} [options] -L label1 -L label2 file1 file2";
   echo "where the labels give what is displayed for each file,"
   echo "and the file names give the actual paths to the files"
+  echo ""
+  echo "To add options from svn diff, use something like:"
+  echo "    svn diff --diff-cmd svn-viewdiff -x '[options]' ..."
   echo "";
   echo "options:";
   echo "  --help                     Print this help";
