@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# Bill Sacks
+# 3-6-07
+
+# do an ncdiff between all *.nc files in current directory and all *.nc files in the directory given by the command-line argument, putting output here in *_diff.nc
+# note that we ignore any file that isn't present in both directories
+
+if (( $# != 1)); then
+    echo "Usage: $0 path"
+    echo "Where path is the path containing the *.nc files to diff with"
+    exit 1
+fi
+
+if [[ ! -d $1 ]]; then
+    echo "Error: $1 not a directory; halting"
+    exit 1
+fi
+
+for file in *.nc
+do
+    if [ -f $1/$file ]; then   # make sure file exists in the other directory
+	file_base=`echo $file | sed "s/\.nc//"`  # trim .nc off the end
+	echo "diffing $file"
+	ncbo --op_typ=- $file $1/$file ${file_base}_diff.nc
+    else
+	echo "$file doesn't exist in $1"
+    fi
+done

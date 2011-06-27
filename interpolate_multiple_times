@@ -1,0 +1,82 @@
+#!/usr/bin/perl
+
+# Bill Sacks
+# 4-29-08
+
+# Do interpolate.ncl on a netcdf file that has multiple time slices,
+#  by splitting the file up into single times and doing the interpolation
+#  separately on each time slice.
+# Although we could just call interpolate.ncl on the whole file, this can
+#  sometimes lead to out-of-memory errors.
+
+# Customization is done by setting variables at the top of this file
+
+# Assumptions: 
+#  - longitude is cyclic (uses default value of True in interpolate.ncl)
+
+
+# BEGIN USER-DEFINED VARIABLES
+
+# The file that you want to interpolate:
+my $input_fname = "/Users/sacks/cru/cru.sunfrac.clim.nc";
+
+# Number of times in input file:
+my $ntimes = 12;
+
+# The file at the desired resolution:
+my $template_fname = "/Users/sacks/cru/cru.temp.clim.5min.nc";
+
+# Name of a variable in that file:
+my $template_var_name = "temp";
+
+# Does the template variable have multiple time slices (1=yes, 0=no)?
+#  - if it does, we'll need to extract a single time slice for interpolation
+my $template_mtimes = 1;
+
+# Name of output file (must not already exist)
+my $output_fname = "/Users/sacks/cru/cru.sunfrac.clim.5min.nc";
+
+# END USER-DEFINED VARIABLES
+
+# Extract single time slice from template variable, if necessary:
+my $template_slice_fname;
+if ($template_mtimes) {
+  print "Extracting first time slice from template file\n";
+
+  $template_slice_fname = "${template_fname}.slice.$$.nc";
+  system "ncks -d time,0,0 -v $template_var_name $template_fname $template_slice_fname";
+}
+else {
+  $template_slice_fname = $template_fname;
+}
+
+# Loop through time slices in input file,
+#  extracting each time slice and doing interpolation on it:
+my @files_to_cat = ();
+my $input_slice_fname = "${input_fname}.slice.$$.nc";
+for (my $time = 0; $time < $ntimes; $time++) {
+  print "------------ Doing time $time -------------\n";
+
+  my $output_slice_fname = "${output_fname}.$time.$$.nc";
+  system "ncks -O -d time,$time,$time $input_fname $input_slice_fname";
+  # In the following line, we need to surround each string with \\\"
+  #  - this prints \", which is what ncl needs around input strings
+  system "ncl ~/ncl/interpolate.ncl input_file_name=\\\"$input_slice_fname\\\" template_file_name=\\\"$template_slice_fname\\\" template_var_name=\\\"$template_var_name\\\" output_file_name=\\\"$output_slice_fname\\\"";
+  unlink $input_slice_fname;
+
+  push (@files_to_cat, $output_slice_fname);
+}
+
+
+# Remove file containing single time slice of template variable, if necessary:
+if ($template_mtimes) {
+  unlink $template_slice_fname;
+}
+
+
+# Concatenate all time slice output files:
+print "Concatenating files\n";
+system "ncrcat @files_to_cat $output_fname";
+
+# Remove time slice output files:
+unlink @files_to_cat;

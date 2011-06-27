@@ -1,0 +1,89 @@
+#!/bin/bash
+
+# Bill Sacks
+# 5-6-07
+
+# do an ncbo between all *.nc files (or *here_extension.nc files) in this directory,
+#  and all corresponding *.nc files (or *there_extension.nc files) in the directory given by <path>,
+#  putting output here in *_optyp.nc
+# we ignore any file that isn't present in both directories
+# if -q is specified, then we also use the ncl script quick_look.ncl (in ~/ncl) to output maps of all variables to the given file
+
+function Usage {
+    echo "Usage: $0 path [here_extension [there_extension]]"
+    echo "path: the path containing the *.nc files to diff (etc.) with"
+    echo "here_extension: if provided, only consider files in this directory that are of the form '*here_extension.nc'; in looking for corresponding files in <path>, ignore 'here_extension'"
+    echo "there_extension: if provided, only consider files in <path> that are of the form '*there_extension.nc'; ignore this extension in determining corresponding files here"
+    echo ""
+    echo "Performs ncbo on all files matching the given pattern here, with all files matching the given file in <path>"
+    echo "Puts output here in *_<optyp>.nc"
+    echo ""
+    echo "The following are optional arguments:"
+    echo "[-o optyp]: Use the given ncbo optyp in place of the default, sbt"
+    echo "[-q filename]: After doing ncbo on all files, run quick_look.ncl to output maps of all variables to 'filename.pdf'"
+    echo ""
+    echo "Example: to do ratio, with numerator equal to each file here with extension *_sbt.nc, and denominator equal to each corresponding file in other_path with extension *.nc:"
+    echo "$0 -o dvd -q quick_look_ratio other_path '_sbt'"
+    exit 1
+}
+
+
+#define default values:
+optyp=sbt
+quick_look_file=
+here_extension=
+there_extension=
+
+# handle command-line arguments:
+while getopts o:q: opt
+do
+    case $opt in
+	o) optyp=$OPTARG;;
+	q) quick_look_file=$OPTARG;;
+	\?) Usage
+    esac
+done
+
+# shift off the arguments we read with getopts:
+shift `expr $OPTIND - 1`
+
+if [[ $# -lt 1  ||  $# -gt 3 ]]; then
+    Usage
+fi
+
+there_path=$1
+if [[ $# -gt 1 ]]; then
+    here_extension=$2
+fi
+if [[ $# -gt 2 ]]; then
+    there_extension=$3
+fi
+
+# echo "there_path: <$there_path>"
+# echo "here_extension: <$here_extension>"
+# echo "there_extension: <$there_extension>"
+# echo "optyp: <$optyp>"
+# echo "quick_look_file: <$quick_look_file>"
+
+if [[ ! -d $there_path ]]; then
+    echo "Error: $there_path not a directory; halting"
+    echo ""
+    Usage
+fi
+
+for file in *$here_extension.nc
+do
+    file_base=`echo $file | sed "s/$here_extension\.nc//"`  # trim 'here_extension.nc off the end"
+    file_there=$file_base$there_extension.nc
+    if [ -f $there_path/$file_there ]; then   # make sure file exists in the other directory
+	echo "operating on $file with $there_path/$file_there..."
+	ncbo --op_typ=$optyp $file $there_path/$file_there ${file_base}${here_extension}_${optyp}.nc
+    else
+	echo "$file_there doesn't exist in $there_path"
+    fi
+done
+
+if [ $quick_look_file ]; then
+    ncl $HOME/ncl/quick_look.ncl pattern=\"*${here_extension}_${optyp}.nc\" output_file=\"$quick_look_file\"
+fi
+    

@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# Run global_avg.ncl on lots of different files and variables
+
+yearname="1998-2004"
+
+# for field in QIRRIG TSA QSOIL QVEGT TG TREFMNAV TREFMXAV
+for field in QIRRIG QSOIL QVEGT TG FGEV FCTR FCEV
+do
+    for base_name in clm3.5_control clm3.5_irrigation clm3.5_control_agonly clm3.5_irrigation_agonly clm3.5_irrigation_pulse_agonly clm3.5_irrigation_pulse_noon_agonly
+#    for base_name in clm3.5_control_agonly clm3.5_irrigation_agonly clm3.5_irrigation_pulse_agonly clm3.5_irrigation_pulse_noon_agonly
+    do
+	for season in annualavg.avg
+	do
+	    ncl $HOME/ncl/global_avg.ncl fl_name=\"${base_name}.clm2.h0.${yearname}.${season}.nc\" field=\"$field\"
+	done
+    done
+done

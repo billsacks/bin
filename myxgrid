@@ -1,0 +1,153 @@
+#!/usr/bin/perl
+
+use strict;
+use Getopt::Std;
+use Data::Dumper;
+
+# -----------------
+# User-specific customization goes here
+
+# Note that strings should be single-quoted to avoid interpolation
+
+my $email = 'wsacks@wisc.edu';
+my $file = '~/.myxgrid';
+
+# End user-specific customization
+# -----------------
+
+# You normally shouldn't have to modify anything below this point
+
+# Declare variables:
+
+our (%joblist);
+my (%args);
+my ($command);
+
+
+# Get optional arguments:
+# getopts("abc", \%args);
+
+# while (($k, $v) = each %args) {
+#   print "$k => $v\n";
+# }
+
+# the first argument (after any optional arguments) is the command; we must have one
+if (@ARGV lt 1) {
+  &usage;
+  die;
+}
+$command = shift @ARGV;
+
+# expand possible tilde in $file:
+$file = glob $file;
+
+# if there is an existing joblist file, read it in
+if (open(F, "< $file"))  {
+  do $file or die "Can't recreate job list from $file\n";
+  close(F) or die "Can't close $file\n";
+}
+
+# parse the command
+if ($command eq "submit") {
+  &submit($email, $file, \%joblist);
+}
+elsif ($command eq "list") {
+  &list(\%joblist);
+}
+elsif ($command eq "results") {
+  &results(\%joblist);
+}
+
+# finally, write (possibly modified) joblist back to file
+&writeJoblist($file, \%joblist, "joblist");
+
+
+sub usage  {
+  print "Usage: myxgrid ...\n";
+}
+
+
+sub submit  {
+  my ($email, $file, $joblist) = @_;
+
+  my ($executable, $directory);  # command-line arguments
+  my ($result, $jobid);
+
+  if (@ARGV lt 2)  {
+    &usage;
+  }
+  $directory = shift @ARGV;
+  $executable = shift @ARGV;
+
+  # if directory doesn't exist, create it
+  if (! -d $directory)  {
+    if (-e $directory)  {
+      die "Error: $directory is a file";
+    }
+    else {
+      if (mkdir ($directory, 0755))  {
+	print "Making $directory\n";
+      }
+      else {
+	die "Cannot create $directory";
+      }
+    }
+  }
+
+  $result = `system ("xgrid -job submit -in $directory -email $email $executable @ARGV")`;
+  print "$result\n";
+  
+  # if we had success, add this job to personal job list
+  if ($result =~ /jobIdentifier\s*=\s*(\d*)/) {
+    $jobid = $1;
+    $joblist->{$jobid} = $directory;
+  }
+}
+
+
+sub list  {
+  my ($joblist) = @_;
+
+  my ($k, $v);
+
+  if (@ARGV ne 0)  {
+    &usage;
+  }
+
+  while(($k, $v) = each %$joblist)  {
+    print "$k => $v\n";
+    system ("xgrid -job attributes -id $k");
+  }
+}
+
+
+sub results  {
+  my ($joblist) = @_;
+
+  my ($jobid, $directory);
+
+  if (@ARGV ne 1)  {
+    &usage;
+  }
+
+  $jobid = shift @ARGV;
+  
+  $directory = $joblist->{$jobid};
+  if (defined $directory)  {  # the jobid was in the joblist hash
+    system("xgrid -job results -id $jobid -so $directory/stdout.$jobid -se $directory/stderr.$jobid -out $directory");
+  }
+  else {
+    print "Error: Job $jobid not found in joblist\n";
+  }
+}
+
+
+
+sub writeJoblist  {
+  my ($file, $joblist, $name) = @_;
+
+  open (F, "> $file") or die "Can't open $file for writing\n";
+  print F Data::Dumper->Dump([$joblist], ["*$name"]);
+  close(F) or die "Can't close $file\n";
+}
+

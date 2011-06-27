@@ -1,0 +1,14 @@
+weighted_avg:
+	A fancy wrapper for ncwa: computes weighted averages, possibly
+	computing multiple averages (i.e. multiple slices), and possibly
+	masking (i.e. only including a subset of points).
+
+	Designed for computing annual averages, one for each year, from
+	monthly output. However, it could also conceivably be used for
+	spatial averaging (e.g. multiple latitude bands).
+
+	To use it, first modify the variables at the top of the script.
+
+	Can be used in conjunction with catmonthly.	
+
+	See also notes at top of weighted_avg for details.

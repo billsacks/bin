@@ -1,0 +1,21 @@
+************************************************
+display_all_diffs
+************************************************
+
+WRITTEN: 3-7-07, by Bill Sacks (WJS)
+
+OBSOLETE: Replaced 5-6-07 by ncbo_all
+
+--- PURPOSE ---
+
+A front-end to ncdiff_all and the ncl script quick_look.ncl. This script first calls ncdiff_all to generate difference files, and then runs quick_look.ncl on these difference files, to generate a pdf containing maps of all differences.
+
+--- USAGE ---
+
+display_all_diffs path
+
+Where "path" is the path containing the *.nc files to diff with.
+
+--- CAVEATS ---
+
+Expects quick_look.ncl to be in the directory ~/ncl/ (though this can easily be changed).

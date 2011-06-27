@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# Bill Sacks
+# 3-7-07
+
+# first call ncdiff_all to do ncdiffs between all *.nc files in current directory and all *.nc files in directory given by the command-line argument
+# then use the ncl script quick_look.ncl (in ~/ncl) to output maps of all variables to quick_look.pdf
+# do an ncdiff between all *.nc files in current directory and all *.nc files in the directory given by the command-line argument, putting output here in *_diff.nc
+# note that we ignore any file that isn't present in both directories
+
+if (( $# != 1)); then
+    echo "Usage: $0 path"
+    echo "Where path is the path containing the *.nc files to diff with"
+    exit 1
+fi
+
+if [[ ! -d $1 ]]; then
+    echo "Error: $1 not a directory; halting"
+    exit 1
+fi
+
+ncdiff_all $1
+
+ncl 'pattern="*_diff.nc"' ~/ncl/quick_look.ncl

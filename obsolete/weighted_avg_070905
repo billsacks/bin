@@ -1,0 +1,205 @@
+#!/usr/bin/perl
+
+# Bill Sacks
+# 9/4/07
+
+# This script is essentially a fancy wrapper for ncwa
+# It computes weighted averages of the netcdf file $infile,
+#  placing output in the netcdf file $outfile
+# Averages are taken along a single dimension of $infile, given by $avg_dim
+# If $num_points > 0, then we chop $avg_dim up into blocks of length $num_points,
+#  and compute the average for each of these blocks
+#  (e.g. if $avg_dim has length 100, and $num_points = 20, then we compute 5 separate averages)
+#  Then we glue all these averages back together in the end, maintaining the $avg_dim dimension in the file
+#   (however, note that the dimensions may have been reordered; in particular, $avg_dim will now be the record dimension,
+#    and variables that did not have $avg_dim as one of their dimensions now will have it as their first dimension)
+# If $num_points = 0, then we just do a single average across all points,
+#  and $avg_dim will no longer be a dimension
+# (So note that specifying $num_points = 0 will give a different output file than $num_points = (length($avg_dim))
+#  - the former removes $avg_dim, whereas the latter maintains it as a degenerate dimension)
+# If $weightvar is specified (not ""), then this variable in the input netcdf file is used for weighting the averages
+#  If no $weightvar is specified, we do unweighted averages
+# If $maskvar is specified (not ""), then the weighted average is only done over the points where $maskvar == 1
+#  This mask variable is removed from the final file
+#  If $mask is specified (not ""), then $maskvar cannot exist in input file, 
+#   and we use $mask to create the new variable $maskvar
+#   We create this variable using the expression in $mask, which should be in ncap2 syntax
+#   Example mask: "(month == 3 || month == 4 || month == 5)" [seasonal average over MAM]
+#  If $mask is "", then $maskvar MUST exist in input file, and we use the existing mask
+# Anything in $other_options is passed on the command line to ncwa
+
+# Note that this script can be used in conjunction with catmonthly to generate annual/seasonal averages weighted by # days in month
+
+use strict;
+
+# User-defined options:
+
+my $infile = "clm3.5_control_agonly.clm2.h0.1998-2004.nc";
+my $outfile = "clm3.5_control_agonly.clm2.h0.1998-2004.annualavg.nc";
+my $avg_dim = "time"; # name of dimension along which we should take average
+my $num_points = 12;  # number of points to include in each average; 0 -> do a single average using all points
+my $weightvar = "ndays"; # name of weighting variable (if "", no weighting)
+my $maskvar = ""; # name of existing or new mask variable in netCDF file; if "", do no masking
+my $mask = "";  # if not "", expression for creating $maskvar (must use ncap2 syntax); "" -> use existing $maskvar
+my $other_options = "";  # any other options to ncwa
+
+# End user-defined options
+
+my $currfile = $infile;  # keep track of name of file that we're currently processing
+my $maskcond = "";  # string specifying the masking condition for ncwa
+my $exclude = "";  # string specifying variables to exclude in ncwa
+my $weight_option = "";  # string specifying weighting in ncwa
+my ($command, $num_points_actual);
+if ($maskvar) {
+  $maskcond = "-B '$maskvar == 1'";
+  $exclude = "-x -v $maskvar";
+}
+if ($weightvar) {
+  $weight_option = "-w $weightvar";
+}
+
+# Do initial error checking:
+
+# Make sure $outfile doesn't already exist:
+if (-e $outfile) {
+  die "$outfile already exists\n";
+}
+
+# Make sure $avg_dim exists in infile:
+if (!var_in_file($infile, $avg_dim)) {
+  die "$infile does not have avg_dim variable ($avg_dim)\n";
+}
+
+# And make sure $weightvar exists in infile:
+if ($weightvar && !var_in_file($infile, $weightvar)) {
+  die "$infile does not have weightvar variable ($weightvar)\n";
+}
+
+# And make sure $maskvar exists or does not exist (depending on value of $mask) in infile:
+if ($mask && !$maskvar) {
+  die "Specified a mask but not a maskvar\n";
+}
+if ($mask && var_in_file($infile, $maskvar)) {
+  die "Mask specified, but $infile already has maskvar field ($maskvar)\n";
+}
+if (!$mask && !var_in_file($infile, $maskvar)) {
+  die "No mask specified, and $infile does not have maskvar field ($maskvar)\n";
+}
+
+# End initial error checking
+
+# Determine # of averages to do, and do some more error checking:
+
+my $dimlength = dimsize($infile, $avg_dim);
+if ($dimlength < 0) {
+  die "Error determining length of $avg_dim in $infile\nAre you sure $avg_dim is a dimension?\n";
+}
+
+if ($num_points == 0) {
+  $num_points_actual = $dimlength;  # just do one average over all points
+}
+else {
+  $num_points_actual = $num_points;
+}
+my $num_averages = int($dimlength/$num_points_actual);
+if ($num_averages == 0) {
+  die "Length of $avg_dim dimension ($dimlength) less than num_points ($num_points_actual)\n";
+}
+
+print "Length of $avg_dim dimension: $dimlength\n";
+print "Performing $num_averages averages of length $num_points_actual\n";
+if ($dimlength % $num_points_actual != 0) {
+  print "Warning: dimension length not a multiple of num_points; ignoring last ", $dimlength - ($num_averages * $num_points_actual), " points.\n";
+}
+
+# create temporary directory for storing temporary files:
+my $temp_dir = "/tmp/scratch_$$";
+mkdir $temp_dir, 0700 or die "cannot create $temp_dir: $!";
+my $temp_num = 1;  # a number for each temporary file
+
+# add mask, if requested:
+if ($mask) {
+  my $tempfname = "$temp_dir/scratch_${temp_num}.nc";
+  $temp_num++;
+  $command = "ncap2 -O -s '$maskvar=$mask' $currfile $tempfname";
+  print "Adding mask: $command\n";
+  system "$command";
+  $currfile = $tempfname;
+}
+
+# do all num_averages averages:
+my $start_index = 0;
+my $end_index = $num_points_actual - 1;
+my @file_list = ();  # growing list of files containing averages
+for (my $i = 0; $i < $num_averages; $i++) {
+  my $tempfname = "$temp_dir/scratch_${temp_num}.nc";
+  $temp_num++;
+  $command = "ncwa -O -a $avg_dim -d $avg_dim,$start_index,$end_index $weight_option $maskcond $exclude $other_options $currfile $tempfname";
+  print "Averaging: $command\n";
+  system "$command";
+
+  push (@file_list, $tempfname);
+  $start_index += $num_points_actual;
+  $end_index += $num_points_actual;
+}
+
+# finally, create the single output file:
+if ($num_points == 0) { # user just wants one file: so $avg_dim will no longer be in the file
+  print "Renaming $file_list[0] -> $outfile\n";
+  rename $file_list[0], $outfile;
+}
+else { # piece the averages together into a single file, and rename the "record" dimension
+  $command = "ncecat -O @file_list $outfile";
+  print "Concatenating files: $command\n";
+  system "$command";
+  $command = "ncrename -d record,$avg_dim $outfile";
+  print "Renaming record dimension: $command\n";
+  system "$command";
+}
+
+# clean-up: remove contents of $temp_dir and directory itself:
+unlink glob "$temp_dir/* $temp_dir/.*";
+rmdir $temp_dir;
+
+
+# --- BEGIN SUBROUTINES ---
+
+# var_in_file(filename, varname)
+# Return true if the variable given by varname is in the netcdf file given by filename, 0 if not
+sub var_in_file {
+  my ($filename, $varname) = @_;
+  my $result = system "ncdump -v $varname $filename > /dev/null 2>&1";
+  # now result is 0 if no error (variable present), non-zero if error (variable absent)
+
+  return (!$result);
+}  
+
+
+# dimsize(filename, dimname)
+# Return length of the dimension given by dimname in the given netcdf file,
+#  or -1 if this dimension doesn't exist in this file
+#  (or if there is some other error - e.g. dimname isn't really a dimension)
+sub dimsize {
+  my ($filename, $dimname) = @_;
+  my @result = `ncks -F -v $dimname $filename`;
+  # now result contains header info, followed by a bunch of elements like "$dimname(#)=...",
+  #  where each # is one index of the dimension (1-indexing)
+
+  # starting with last line, go backwards until we find an element of the form "$dimname(#)..." at the start of the line
+  #  note that we can't just use the last line, since it may be blank
+  my $i = $#result;
+  until ($i < 0 || $result[$i] =~ m/^ *$dimname\(\d+\)/) {
+    $i--;
+  }
+  # Now, if i < 0, we never found a line like what we were looking for;
+  #  otherwise, line $i is the last line of the form "$dimname(#)..."
+
+  if ($i < 0) {
+    return -1;  # error!
+  }
+  else {
+    # do the same string match as above, but capture the number in $1:
+    $result[$i] =~ m/^ *$dimname\((\d+)\)/;
+    return $1;
+  }
+}

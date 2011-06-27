@@ -1,0 +1,22 @@
+************************************************
+ncdiff_all
+************************************************
+
+WRITTEN: 3-6-07, by Bill Sacks (WJS)
+
+OBSOLETE: Replaced 5-6-07 by ncbo_all
+
+--- PURPOSE ---
+
+Generate difference files between all *.nc files in current directory and all corresponding files (with the same file name) in another directory. This other directory is given by a command-line argument. Differencing is done with ncbo (a netCDF operator), and output is put in *_diff.nc. Note that we ignore any file that isn't present in both directories.
+
+--- USAGE ---
+
+ncdiff_all path
+
+Where "path" is the path containing the *.nc files to diff with.
+
+--- CAVEATS ---
+
+This will fail if ncbo is not installed!
+

@@ -1,0 +1,12 @@
+catmonthly: 
+        Concatenate a bunch of monthly files together.
+        Also, add two fields to each of the input files, and the final
+        output file:
+                - month (1-12)
+                - ndays (# of days per month)
+
+        - To use it, first modify the variables at the top of the
+          script, then run it from the directory containing the monthly
+          output files   
+
+	- Can be used in conjunction with weighted_avg 

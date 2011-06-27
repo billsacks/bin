@@ -1,0 +1,79 @@
+#!/usr/bin/perl
+
+# Bill Sacks
+# 8/31/07
+
+# This script concatenates a bunch of monthly netcdf files together
+# As it does so, it adds two fields to them:
+#  (1) month (1-12)
+#  (2) ndays (number of days per month)
+# Note that these fields are added to the input files as well as to the final output file
+
+# The script should be run from the directory containing the input files
+
+# Note that this script can be used in conjunction with weighted_avg to generate annual/seasonal averages weighted by # days in month
+
+use strict;
+
+# Define all user-defined variables here
+my $basename = "clm3.5_control.clm2.h0";
+my @years = qw/1998 1999 2000 2001 2002 2003 2004/;
+my $outputdir = '~/irrigation_output';
+my $outputext = '1998-2004';  # output file name will be ${basename}.${outputext}.nc
+my $timedim = 'time';  # name of time dimension variable in input files
+
+# Shouldn't have to edit anything below this
+
+$outputdir = glob $outputdir;  # expand possible tilde in directory name
+if (!-d $outputdir) {
+  die "$outputdir not a directory";
+}
+my $outputfile = "${outputdir}/${basename}.${outputext}.nc";
+if (-e $outputfile) {
+  die "$outputfile already exists\n";
+}
+
+my @months = qw/01 02 03 04 05 06 07 08 09 10 11 12/;
+my @days_per_month = (31,28,31,30,31,30,31,31,30,31,30,31);
+my @files_to_cat = ();
+
+print "\n----------------------------------\n\n";
+print "Years: @years\n"; 
+print "Using the following input files:\n";
+
+# Add month and ndays field to each file, and build up file list:
+foreach my $year (@years) {
+  for (my $month_num = 0; $month_num <= $#months; $month_num++) {
+    my $month = @months[$month_num];
+    my $file = "${basename}.${year}-${month}.nc";
+    if (-e $file) {
+      print "$file: ";
+
+      my $result = system "ncdump -v month $file > /dev/null 2>&1"; # check for month field
+      if ($result == 0)  {  # no error
+	print "already has month field; ";
+      }
+      else  {
+	my $month_int = $month + 0;  # convert from string to integer
+	print "adding month = $month_int; ";
+	system "ncap -O -s 'month[$timedim]=$month_int; month\@long_name=\"Month # of this history time interval (1-12)\"' $file $file";
+      }
+
+      $result = system "ncdump -v ndays $file > /dev/null 2>&1"; # check for ndays field
+      if ($result == 0)  {  # no error
+	print "already has ndays field\n";
+      }
+      else {
+	my $ndays = @days_per_month[$month_num];
+	print "adding ndays = $ndays\n";
+	system "ncap -O -s 'ndays[$timedim]=$ndays; ndays\@long_name=\"Number of days in this history time interval\"' $file $file";
+      }
+	
+      push (@files_to_cat, $file);
+    }
+  }
+}
+
+# Concatenate files:
+print "Concatenating files -> $outputfile\n";
+system "ncrcat @files_to_cat $outputfile\n";

@@ -1,0 +1,60 @@
+************************************************
+ncbo_all
+************************************************
+
+WRITTEN: 5-6-07, by Bill Sacks (WJS)
+
+--- PURPOSE ---
+
+Generate difference (or some other operation, as given by the -o
+command-line option) files between all *.nc files (or all files with a
+given extension) in the current directory, and all corresponding files
+(optionally with a given extension) in another directory. The other
+directory, as well as the optional extensions, are given by command-line
+arguments. Differencing is done with ncbo (a netCDF operator), and
+output is put in *_optyp.nc (where optyp is, for example, "sbt"). Note
+that we ignore any file that isn't present in both directories.
+
+If the -q command-line option is specified, then we also run the ncl
+script ~/ncl/quick_look.ncl, thus generating a pdf with plots of all the
+difference files generated. The output of this script is put in a file
+with the filename given through this command-line option.
+
+This program replaces the now-obsolete ncdiff_all and display_all_diffs.
+
+--- USAGE ---
+
+ncbo_all path [here_extension [there_extension]]
+
+path: the path containing the *.nc files to diff (etc.) with
+
+here_extension: if provided, only consider files in this directory that
+are of the form '*here_extension.nc'; in looking for corresponding files
+in <path>, ignore 'here_extension'
+
+there_extension: if provided, only consider files in <path> that are of
+the form '*there_extension.nc'; ignore this extension in determining
+corresponding files here
+
+Performs ncbo on all files matching the given pattern here, with all
+files matching the given file in <path>
+
+Puts output here in *_<optyp>.nc
+
+The following are optional arguments:
+[-o optyp]: Use the given ncbo optyp in place of the default, sbt
+[-q filename]: After doing ncbo on all files, run quick_look.ncl to
+output maps of all variables to 'filename.pdf'
+
+Example: to do ratio, with numerator equal to each file here with
+extension *_sbt.nc, and denominator equal to each corresponding file in
+other_path with extension *.nc:
+
+/Users/sacks/bin/ncbo_all -o dvd -q quick_look_ratio other_path '_sbt'
+
+--- CAVEATS ---
+
+This will fail if ncbo is not installed!
+
+Expects quick_look.ncl to be in the directory ~/ncl/ (though this can
+easily be changed).

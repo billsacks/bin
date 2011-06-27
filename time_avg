@@ -1,0 +1,15 @@
+#!/bin/csh
+
+# Bill Sacks
+# 9/5/07
+
+# Do a time-average of all files matching pattern
+# Put result in *.avg.nc
+
+set pattern="*.annualavg.nc"
+
+foreach fl ( $pattern )
+    echo $fl
+    set out=`echo $fl | sed 's/.nc/.avg.nc/'`
+    ncra $fl $out
+end
