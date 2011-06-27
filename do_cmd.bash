@@ -18,7 +18,10 @@ function do_cmd {
 
     echo $cmd
     if [ $dryrun -eq 0 ]; then
-	$cmd
+	# We use 'eval $cmd' rather than just '$cmd', because the
+	# latter doesn't work right if the command contains any quoted
+	# strings (e.g., svn ci -m "this is my message")
+	eval $cmd
 	if [ $? -ne 0 ]; then
 	    echo "ERROR in do_cmd: error executing command"
 	    return 2
