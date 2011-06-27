@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# To test mins_and_maxes, simply run this script.
+# If everything worked correctly, there should be no output
+
+# Initial setup
+rm -rf test_outputs
+mkdir test_outputs
+
+# Run the tests
+mins_and_maxes inputs/one_col > test_outputs/one_col_defaults
+mins_and_maxes -v first_col=1 -v last_col=1 inputs/one_col > test_outputs/one_col_explicit
+
+mins_and_maxes inputs/two_col > test_outputs/two_col_defaults
+mins_and_maxes -v first_col=1 -v last_col=2 inputs/two_col > test_outputs/two_col_explicit
+mins_and_maxes -v last_col=1 inputs/two_col > test_outputs/two_col_first
+mins_and_maxes -v first_col=2 inputs/two_col > test_outputs/two_col_second
+
+mins_and_maxes inputs/four_col > test_outputs/four_col_defaults
+mins_and_maxes -v first_col=2 -v last_col=3 inputs/four_col > test_outputs/four_col_23
+mins_and_maxes -v last_col=3 inputs/four_col > test_outputs/four_col_123
+mins_and_maxes -v first_col=2 inputs/four_col > test_outputs/four_col_234
+
+mins_and_maxes inputs/long_names > test_outputs/long_names
+
+mins_and_maxes inputs/scientific > test_outputs/scientific
+
+mins_and_maxes inputs/non_numeric > test_outputs/non_numeric_noNA
+mins_and_maxes -v ignore_re='^NA$' inputs/non_numeric > test_outputs/non_numeric_ignoreNA
+
+# Comparisons with correct files
+for fl in test_outputs/*
+do
+    diff -q $fl correct/`basename $fl`
+done

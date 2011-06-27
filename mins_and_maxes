@@ -1,0 +1,86 @@
+#!/usr/bin/awk -f
+
+# awk script to output the mins and maxes across a range of columns
+#
+# The script calculates the mins and maxes for all columns between
+# first_col and last_col (inclusive), and outputs these along with an
+# appropriate header. It assumes that the input file has a header row.
+
+# Bill Sacks
+# 3/25/10
+
+# Optional variables (can be set on the command line using -v variable=value):
+#  - first_col: First column for which to compute mins & maxes (1-indexing, defaults to 1)
+#  - last_col: Last column for which to compute mins & maxes (1-indexing, defaults to number of columns in the header row)
+#  - ignore_re: Regular expression telling us which values to ignore (e.g., ignore_re='^NA$' will ignore any columns whose value is "NA")
+
+# Note: Any non-numeric value that is not excluded by the ignore_re is treated as a 0
+
+# Header row:
+NR==1 {
+    # If first_col is undefined (or 0), set it to 1
+    if (first_col == 0)
+	first_col = 1
+    
+    # If last_col is undefined (or 0) set it to the number of columns
+    if (last_col == 0)
+	last_col = NF
+
+    # Save the column names for later use
+    split($0, colnames)
+}
+
+# Data rows:
+NR>1 {
+    for (i=first_col; i<=last_col; i++) {
+	# only process if either there is no ignore_re, or this column does not match the ignore_re
+	if (ignore_re==0 || $i !~ ignore_re) {
+            # force conversion to numeric type, to handle any non-numeric value not excluded by the ignore_re
+	    # (this treats non-numeric values as 0)
+	    val = $i + 0  
+
+	    if (i in mins) {  # we have an existing min for this column
+		if (val < mins[i])
+		    mins[i] = val
+	    }
+	    else  # no min yet for this column
+		mins[i] = val
+
+	    if (i in maxes) {  # we have an existing max for this column
+		if (val > maxes[i])
+		    maxes[i] = val
+	    }
+	    else  # no max yet for this column
+		maxes[i] = val
+	}
+    }
+}
+
+# Print mins & maxes, along with a header:
+END {
+    # Print header:
+    printf("%9s", " ")
+    for (i=first_col; i<=last_col; i++) {
+	# Determine format for outputting values
+	# e.g., if length(colnames[i])=17, then format_str will be "%18s" and format[i] will be "%18.7g"
+	width = length(colnames[i]) + 1
+	if (width < 16)
+	    width=16
+	format_str = sprintf("%%%ds", width)
+	format[i] = sprintf("%%%d.7g", width)
+	printf(format_str, colnames[i])
+    }	
+    printf("\n")
+    
+    # Print minimums:
+    printf("MINIMUMS:")
+    for (i=first_col; i<=last_col; i++)
+	printf(format[i], mins[i])
+    printf("\n")
+
+    # Print maximums:
+    printf("MAXIMUMS:")
+    for (i=first_col; i<=last_col; i++)
+	printf(format[i], maxes[i])
+    printf("\n")
+}
