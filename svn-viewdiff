@@ -186,4 +186,5 @@ sleep 1
 
 # Give FileMerge some time before letting svn diff continue and possibly delete
 # any temp files, or before deleting our own temp files.
-if [ -n "${tmp}" ]; then (sleep 2; rm -rf "${tmp}") & fi;
+# WJS (1-13-11): Reduced sleep time from 2 to 1
+if [ -n "${tmp}" ]; then (sleep 1; rm -rf "${tmp}") & fi;
