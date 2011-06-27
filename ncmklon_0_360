@@ -10,7 +10,7 @@
 #  $2: output file name
 # Other user-customizable constants:
 #  - lon_name
-#  - other_dims
+#  - all_dims
 #  - last_west
 
 # define constants:
@@ -25,8 +25,7 @@ last_west="-0.000001"
 # done defining constants
 
 function Usage {
-    echo "Usage: $0 lon_name input_file output_file"
-    echo "lon_name: name of longitude dimension"
+    echo "Usage: $0 input_file output_file"
     exit 1
 }
 
