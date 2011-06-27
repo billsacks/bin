@@ -288,6 +288,8 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+echo ""
+
 # ----------------------------------------------------------------------
 # Make new branch tag
 # ----------------------------------------------------------------------
@@ -297,6 +299,8 @@ if [ $? -ne 0 ]; then
     echo "ERROR creating new branch tags directory"
     exit 1
 fi
+
+echo ""
 
 do_cmd "svn cp $branch_url $this_tag_url -m '$this_tag_msg'" $dryrun
 if [ $? -ne 0 ]; then
