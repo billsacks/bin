@@ -13,6 +13,10 @@
 #  - all_dims
 #  - last_west
 
+# Requires:
+# - netCDF operators (NCO)
+# - ncmkrec (A script written by Bill)
+
 # define constants:
 
 lon_name="longitude"
