@@ -30,12 +30,10 @@
 #      difference by that grid cell's magnitude; here, the denominator
 #      is the average magnitude, averaged across space
 #
-# The handling of time is determined by the variables time_index_master
-# and summarize_all_times in quick_look.ncl. The default values as of
-# 3-1-10 are time_index_master=-1 and summarize_all_times=False. This
-# means that the summary is just taken across the last time step of each
-# variable. This is generally reasonable behavior for yearly output
-# files, though probably not for, say, monthly output files.
+# The handling of time is determined by the variables
+# time_index_master and summarize_all_times in quick_look.ncl. The
+# default as of 3-24-10 is summarize_all_times=True. This means that
+# the summary is taken across all time steps of each variable.
 
 # This script uses ncreldiffs.awk, ncbo_all and quick_look.ncl. The
 # paths of these are given below, in the section, "Set some parameters
