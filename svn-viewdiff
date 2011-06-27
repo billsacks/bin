@@ -51,6 +51,11 @@ usage ()
   echo "options:";
   echo "  --help                     Print this help";
   echo "  --prefix                   append this prefix to each file, for display purposes"
+  echo "                             (e.g., if you have multiple sets of diffs open at once,"
+  echo "                             this can be used to group similar diffs together in the"
+  echo "                             window menu, by giving them all the same prefix)"
+  echo "                             (note: for readability, put a separator like '_' at the"
+  echo "                             end of the prefix)"
   echo "  -c                         Ignored";
   echo "  -C --context X             Ignored";
   echo "  -u                         Ignored";
