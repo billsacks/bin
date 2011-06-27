@@ -19,6 +19,9 @@
 #  - Relative differences: min, max, average & average absolute value
 #    - These are calculated by dividing the min, max, average &
 #      average_abs of the differences by the Avg_Magnitude
+#    - Note that this is different from dividing each grid cell's
+#      difference by that grid cell's magnitude; here, the denominator
+#      is the average magnitude, averaged across space
 #
 # The handling of time is determined by the variables time_index_master
 # and summarize_all_times in quick_look.ncl. The default values as of
