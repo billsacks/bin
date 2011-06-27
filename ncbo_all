@@ -82,6 +82,7 @@ if [[ ! -d $there_path ]]; then
     Usage
 fi
 
+files=""  # files to run quick_look on
 for file in *$here_extension.nc
 do
     file_base=`echo $file | sed "s/$here_extension\.nc//"`  # trim 'here_extension.nc off the end"
@@ -89,12 +90,23 @@ do
     if [ -f $there_path/$file_there ]; then   # make sure file exists in the other directory
 	echo "operating on $file with $there_path/$file_there..."
 	ncbo --op_typ=$optyp $file $there_path/$file_there ${file_base}${here_extension}_${optyp}.nc
+	files="$files ${file_base}${here_extension}_${optyp}.nc"
     else
 	echo "$file_there doesn't exist in $there_path"
     fi
 done
 
 if [ $quick_look_file ]; then
-    ncl $quick_look_path pattern=\"*${here_extension}_${optyp}.nc\" output_file=\"$quick_look_file\"
+    # We use an explicit list of files, rather than a wildcard pattern like:
+    #   pattern=\"*${here_extension}_${optyp}.nc\"
+    # This is to ensure that the files are processed in a certain
+    # order, for consistency with how things are done in ncreldiffs,
+    # which uses this script
+    #
+    # Note that all_files_var will literally be "$files" (unexpanded) in
+    # quick_look.ncl. The variable will be expanded when the ncl script
+    # calls systemfunc("echo ...")
+    export files
+    ncl $quick_look_path 'all_files_var="$files"' output_file=\"$quick_look_file\"
 fi
     

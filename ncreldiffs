@@ -177,10 +177,10 @@ done
 export there_files
 echo "Getting average magnitudes in control files: Running quick_look on:"
 echo $there_files
-# Note that pattern will literally be "$there_files" (unexpanded) in
+# Note that all_files_var will literally be "$there_files" (unexpanded) in
 # quick_look.ncl. The variable will be expanded when the ncl script
-# calls systemfunc("ls ...")
-ncl $quick_look_path 'pattern="$there_files"' output_file=\"$ql_magnitude_file\" 
+# calls systemfunc("echo ...")
+ncl $quick_look_path 'all_files_var="$there_files"' output_file=\"$ql_magnitude_file\" 
 
 # Perform quick_look on the files here to get the average magnitudes of each variable in the "experimental" run:
 ql_expt_magnitude_file="ql_expt_magnitudes.$$"
