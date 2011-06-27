@@ -145,13 +145,21 @@ linkdir=$(mktemp -d /tmp/viewdiff.links.XXXX)
 # will fail for files in anything but the top-level directory.
 dir=`dirname ${label[0]}`
 mkdir -p $linkdir/left/$dir
-ln "${file1}" "${linkdir}/left/${label[0]}"
+# We try to do a link first, but if it fails (e.g., because of a
+# cross-device link) then we do a copy instead
+if !(ln "${file1}" "${linkdir}/left/${label[0]}"); then
+    echo "copying instead of linking"
+    cp "${file1}" "${linkdir}/left/${label[0]}"
+fi
 file1="${linkdir}/left/${label[0]}"
 
 # Now the same, but for the second file.
 dir=`dirname ${label[1]}`
 mkdir -p $linkdir/right/$dir
-ln "${file2}" "${linkdir}/right/${label[1]}"
+if !(ln "${file2}" "${linkdir}/right/${label[1]}"); then
+    echo "copying instead of linking"
+    cp "${file2}" "${linkdir}/right/${label[1]}"
+fi
 file2="${linkdir}/right/${label[1]}"
 
 # Done creating links to the actual files with meaningful names
