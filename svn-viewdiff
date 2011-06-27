@@ -70,6 +70,7 @@ usage ()
 # Process arguments
 declare -i labelnum
 labelnum=0
+prefix=""
 while [ $# != 0 ]; do
   case "$1" in
     --help)
@@ -88,6 +89,13 @@ while [ $# != 0 ]; do
 				# that array
       shift 1;  # shift the file name away
       labelnum+=1
+      ;;
+
+# Append a prefix to each file, which helps group windows together
+    --prefix)
+      shift 1; # get rid of the "--prefix"
+      prefix=$1
+      shift 1; # shift the prefix itself away
       ;;
 
 
@@ -144,23 +152,25 @@ linkdir=$(mktemp -d /tmp/viewdiff.links.XXXX)
 # based on the directory part of label[0]; otherwise the 'ln' command
 # will fail for files in anything but the top-level directory.
 dir=`dirname ${label[0]}`
+base=`basename ${label[0]}`
 mkdir -p $linkdir/left/$dir
 # We try to do a link first, but if it fails (e.g., because of a
 # cross-device link) then we do a copy instead
-if !(ln "${file1}" "${linkdir}/left/${label[0]}"); then
+if !(ln "${file1}" "${linkdir}/left/${dir}/${prefix}${base}"); then
     echo "copying instead of linking"
-    cp "${file1}" "${linkdir}/left/${label[0]}"
+    cp "${file1}" "${linkdir}/left/${dir}/${prefix}${base}"
 fi
-file1="${linkdir}/left/${label[0]}"
+file1="${linkdir}/left/${dir}/${prefix}${base}"
 
 # Now the same, but for the second file.
 dir=`dirname ${label[1]}`
+base=`basename ${label[1]}`
 mkdir -p $linkdir/right/$dir
-if !(ln "${file2}" "${linkdir}/right/${label[1]}"); then
+if !(ln "${file2}" "${linkdir}/right/${dir}/${prefix}${base}"); then
     echo "copying instead of linking"
-    cp "${file2}" "${linkdir}/right/${label[1]}"
+    cp "${file2}" "${linkdir}/right/${dir}/${prefix}${base}"
 fi
-file2="${linkdir}/right/${label[1]}"
+file2="${linkdir}/right/${dir}/${prefix}${base}"
 
 # Done creating links to the actual files with meaningful names
 
