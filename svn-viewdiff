@@ -226,7 +226,7 @@ else
     opendiff "${file1}" "${file2}" -merge "${merge}";
 fi;
 
-sleep 2
+sleep 1
 
 # Give FileMerge some time before letting svn diff continue and possibly delete
 # any temp files, or before deleting our own temp files.
