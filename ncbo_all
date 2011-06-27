@@ -7,7 +7,22 @@
 #  and all corresponding *.nc files (or *there_extension.nc files) in the directory given by <path>,
 #  putting output here in *_optyp.nc
 # we ignore any file that isn't present in both directories
-# if -q is specified, then we also use the ncl script quick_look.ncl (in ~/ncl) to output summary stats of all variables to the given file
+# if -q is specified, then we also use the ncl script quick_look.ncl (in ~/ncl, by default) to output summary stats of all variables to the given file
+
+# ----------------------------------------------------------------------
+# Set some parameters here
+# The values here can be over-ridden by setting environment variables before calling this script
+#  - e.g.: export ncreldiffs_awk_path=/path/to/ncreldiffs.awk
+# ----------------------------------------------------------------------
+
+# Full path of the quick_look.ncl script:
+if [ -z "$quick_look_path" ]; then
+    export quick_look_path=$HOME/ncl/quick_look.ncl
+fi
+
+# ----------------------------------------------------------------------
+# Done setting parameters
+# ----------------------------------------------------------------------
 
 function Usage {
     echo "Usage: $0 path [here_extension [there_extension]]"
@@ -84,6 +99,6 @@ do
 done
 
 if [ $quick_look_file ]; then
-    ncl $HOME/ncl/quick_look.ncl pattern=\"*${here_extension}_${optyp}.nc\" output_file=\"$quick_look_file\"
+    ncl $quick_look_path pattern=\"*${here_extension}_${optyp}.nc\" output_file=\"$quick_look_file\"
 fi
     

@@ -1,0 +1,159 @@
+#!/bin/bash
+
+# Bill Sacks
+# 2-28-10
+
+# Creates a file containing a summary of the differences and relative
+# differences between all *.nc files (or *here_extension.nc files) in
+# this directory, and all corresponding *.nc (or *there_extension.nc
+# files) in the directory given by <path>. Also creates a summary of the
+# summary file, containing mins & maxes of the relative difference
+# columns, and outputs this to the screen.
+
+# The main output file contains the following for each level of each variable:
+#  - File, name & level of variable
+#  - Summary of differences: min, max, average & average absolute value
+#  - Average absolute value in the files here
+#    - This is the "Avg_Magnitude" column; it gives the average
+#      magnitude of the variables themselves (not the differences)
+#  - Relative differences: min, max, average & average absolute value
+#    - These are calculated by dividing the min, max, average &
+#      average_abs of the differences by the Avg_Magnitude
+#
+# The handling of time is determined by the variables time_index_master
+# and summarize_all_times in quick_look.ncl. The default values as of
+# 3-1-10 are time_index_master=-1 and summarize_all_times=False. This
+# means that the summary is just taken across the last time step of each
+# variable. This is generally reasonable behavior for yearly output
+# files, though probably not for, say, monthly output files.
+
+# This script uses ncreldiffs.awk, ncbo_all and quick_look.ncl. The
+# paths of these are given below, in the section, "Set some parameters
+# here". Note that ncbo_all also requires ncbo to be installed, and
+# quick_look.ncl requires ncl.
+
+# For information on the usage (i.e., command-line arguments), see the
+# "Usage" function below.
+
+# ----------------------------------------------------------------------
+# Set some parameters here
+# The values here can be over-ridden by setting environment variables before calling this script
+#  - e.g.: export ncreldiffs_awk_path=/path/to/ncreldiffs.awk
+# ----------------------------------------------------------------------
+
+# Full path of the ncreldiffs.awk script:
+# (the following assumes that (1) ncreldiffs is in your path, and (2) ncreldiffs.awk is in the same directory as ncreldiffs;
+#  if these are not true, set the ncreldiffs_awk_path variable manually)
+if [ -z "$ncreldiffs_awk_path" ]; then
+    ncreldiffs_path=`which ncreldiffs`
+    ncreldiffs_dir=`dirname $ncreldiffs_path`
+    export ncreldiffs_awk_path=${ncreldiffs_dir}/ncreldiffs.awk
+fi
+
+# Full path of the ncbo_all script:
+# (the following works if ncbo_all is in your path; if not, set the ncbo_all variable manually)
+if [ -z "$ncbo_all_path" ]; then
+    export ncbo_all_path=`which ncbo_all`
+fi
+
+# Full path of the quick_look.ncl script:
+if [ -z "$quick_look_path" ]; then
+    export quick_look_path=$HOME/ncl/quick_look.ncl
+fi
+
+# Some characteristics of the quick_look summary output files:
+# first column containing real data, as opposed to the name, level, etc.:
+if [ -z "$ql_first_data_col" ]; then
+    export ql_first_data_col=4
+fi
+# column containing the variable name:
+if [ -z "$ql_name_col" ]; then
+    export ql_name_col=2
+fi
+# column containing the level:
+if [ -z "$ql_level_col" ]; then
+    export ql_level_col=3
+fi
+# column containing the average abs. value:
+if [ -z "$ql_avg_abs_col" ]; then
+    export ql_avg_abs_col=7
+fi
+
+# ----------------------------------------------------------------------
+# Done setting parameters
+# ----------------------------------------------------------------------
+
+function Usage {
+    echo "Usage: $0 output_file path [here_extension [there_extension]]"
+    echo "output_file: name of the file which will contain final summary output"
+    echo "  A summary of the summary file is placed in <output_file>.summary, as well as printed to the screen"
+    echo "path: the path containing the *.nc files to diff with"
+    echo "here_extension: if provided, only consider files in this directory that are of the form '*here_extension.nc';"
+    echo "  in looking for corresponding files in <path>, ignore 'here_extension'"
+    echo "there_extension: if provided, only consider files in <path> that are of the form '*there_extension.nc';"
+    echo "  ignore this extension in determining corresponding files here"
+    echo ""
+    echo "Creates a file containing a summary of the differences and relative"
+    echo "differences between all *.nc files (or *here_extension.nc files) in"
+    echo "this directory, and all corresponding *.nc (or *there_extension.nc"
+    echo "files) in the directory given by <path>. Also creates a summary of the"
+    echo "summary file, containing mins & maxes of the relative difference"
+    echo "columns, and outputs this to the screen."
+}
+
+#define default values:
+here_extension=
+there_extension=
+
+if [[ $# -lt 2  ||  $# -gt 4 ]]; then
+    Usage
+    exit 1
+fi
+
+output_file=$1
+there_path=$2
+if [[ $# -gt 1 ]]; then
+    here_extension=$3
+fi
+if [[ $# -gt 2 ]]; then
+    there_extension=$4
+fi
+
+if [[ ! -d $there_path ]]; then
+    echo "ERROR: $there_path not a directory; halting"
+    echo ""
+    Usage
+    exit 1
+fi
+
+# Perform quick_look on the files here to get the average magnitudes of each variable:
+# (Note: although it would be slightly nicer to use the "there" files for the magnitudes
+#  (because those will generally be the "control" case), that is practically more difficult,
+#  since there may be extraneous files in there_path that are not included in the ncbo_all.)
+ql_magnitude_file="ql_magnitudes.$$"
+ncl $quick_look_path pattern=\"*${here_extension}.nc\" output_file=\"$ql_magnitude_file\" 
+
+# Perform ncbo_all on the files to get the differences between the two runs for each variable:
+ql_diff_file="ql_diffs.$$"
+$ncbo_all_path -q $ql_diff_file $there_path $here_extension $there_extension
+
+# Make sure that the two quick_look output files contain the same variables:
+# (Make sure the variable names & levels match up for all lines)
+awk "{print \$$ql_name_col,\$$ql_level_col}" ${ql_magnitude_file}.txt > ${ql_magnitude_file}.vars.txt
+awk "{print \$$ql_name_col,\$$ql_level_col}" ${ql_diff_file}.txt > ${ql_diff_file}.vars.txt
+diffs=`diff ${ql_magnitude_file}.vars.txt ${ql_diff_file}.vars.txt`
+if [[ $diffs != '' ]]; then
+    echo "ERROR: Differences found in variables included in quick_look output for magnitudes and differences"
+    exit 1
+fi
+rm ${ql_magnitude_file}.vars.txt
+rm ${ql_diff_file}.vars.txt
+
+# Make the full summary file, containing differences, average magnitude, and relative differences:
+awk -f $ncreldiffs_awk_path -v first_data_col=$ql_first_data_col -v magfile=${ql_magnitude_file}.txt -v abscol=$ql_avg_abs_col -v summary_outfile="${output_file}.summary" ${ql_diff_file}.txt > $output_file
+
+# Print the summary of the summary file to the screen:
+cat ${output_file}.summary
+
+# Remove intermediate files (but note that we do not remove the *_sbt.nc files created by ncbo_all):
+rm ${ql_magnitude_file}.txt ${ql_diff_file}.txt

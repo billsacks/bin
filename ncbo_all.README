@@ -16,10 +16,9 @@ output is put in *_optyp.nc (where optyp is, for example, "sbt"). Note
 that we ignore any file that isn't present in both directories.
 
 If the -q command-line option is specified, then we also run the ncl
-script ~/ncl/quick_look.ncl, thus generating a text file with summary
-stats of all the difference files generated. The output of this script
-is put in a file with the filename given through this command-line
-option.
+script quick_look.ncl, thus generating a text file with summary stats of
+all the difference files generated. The output of this script is put in
+a file with the filename given through this command-line option.
 
 This program replaces the now-obsolete ncdiff_all and display_all_diffs.
 
@@ -57,5 +56,7 @@ other_path with extension *.nc:
 
 This will fail if ncbo is not installed!
 
-Expects quick_look.ncl to be in the directory ~/ncl/ (though this can
-easily be changed).
+By default, expects quick_look.ncl to be in the directory ~/ncl/ but
+this can be changed by setting the environment variable quick_look_path
+before calling the script, or changing the default value of
+quick_look_path in the script itself.
