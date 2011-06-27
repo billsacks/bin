@@ -1,0 +1,63 @@
+#!/bin/bash
+
+# Bill Sacks
+# 4-16-11
+
+# This script tests the do_cmd function
+# If all tests succeed, nothing will be printed
+
+source do_cmd.bash
+
+# check_result: checks both the integer return value (retval) and the
+# returned string (retstring); if either is wrong, prints 'msg' and exits
+# Usage: check_result retval retstring retval_expected retstring_expected msg
+function check_result {
+    retval=$1
+    retstring=$2
+    retval_expected=$3
+    retstring_expected=$4
+    msg=$5
+
+    if [[ $retval != $retval_expected || $retstring != $retstring_expected ]]; then
+	echo "ERROR: $msg"
+	echo "Return val:    $retval"
+	echo "Expected:      $retval_expected"
+	echo "Return string:"
+	echo "$retstring"
+	echo "Expected:"
+	echo "$retstring_expected"
+	exit 1
+    fi
+}
+
+# Test success
+retstring_expected="echo hello
+hello"
+retval_expected=0
+tst=$(do_cmd "echo hello" 0)
+check_result $? "$tst" $retval_expected "$retstring_expected" "simple success"
+
+# Test dryrun = 1
+retstring_expected="echo hello"
+retval_expected=0
+tst=$(do_cmd "echo hello" 1)
+check_result $? "$tst" $retval_expected "$retstring_expected" "dryrun"
+
+# Test wrong # arguments: too few
+retstring_expected="ERROR in do_cmd: wrong number of arguments: expected 2, received 1"
+retval_expected=1
+tst=$(do_cmd "echo hello")
+check_result $? "$tst" $retval_expected "$retstring_expected" "too few arguments"
+
+# Test wrong # arguments: too many
+retstring_expected="ERROR in do_cmd: wrong number of arguments: expected 2, received 3"
+retval_expected=1
+tst=$(do_cmd "echo hello" 0 goodbye)
+check_result $? "$tst" $retval_expected "$retstring_expected" "too many arguments"
+
+# Test error executing command
+retstring_expected="ls /nothing/exists/here
+ERROR in do_cmd: error executing command"
+retval_expected=2
+tst=$(do_cmd "ls /nothing/exists/here" 0 2> /dev/null)
+check_result $? "$tst" $retval_expected "$retstring_expected" "error executing command"
