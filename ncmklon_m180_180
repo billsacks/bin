@@ -1,0 +1,64 @@
+#!/bin/bash
+
+# Bill Sacks
+# 5-27-11
+
+# Transform the longitude of a file from 0..360 to -180..180
+# In the final output file, longitude will be the last dimension
+# Command-line arguments:
+#  $1: input file name
+#  $2: output file name
+# Other user-customizable constants:
+#  - lon_name
+#  - all_dims
+#  - last_west
+
+# Requires:
+# - netCDF operators (NCO)
+# - ncmkrec (A script written by Bill)
+
+# define constants:
+
+lon_name="lon"
+all_dims="lat,lon"  # comma-separated list of all dimensions, in desired order of output file
+
+# farthest-west longitude included in 'west' file
+# note that any point with a longitude between 180 and $last_west will be discarded!
+# (it's okay for first_west to be closer to 180 than it needs to be)
+first_west="180.00001"
+
+# done defining constants
+
+function Usage {
+    echo "Usage: $0 input_file output_file"
+    exit 1
+}
+
+if [[ $# -ne 2 ]]; then
+    Usage
+fi
+
+in_fname=$1
+out_fname=$2
+
+east_fname="${out_fname}_east.$$"
+west_fname="${out_fname}_west.$$"
+
+# Separate eastern and western halves of the file:
+ncks -d $lon_name,0.,180. $in_fname $east_fname
+ncks -d $lon_name,$first_west,360. $in_fname $west_fname
+
+# Change western latitudes from 180..360 to -180..0:
+ncap2 -O -s "$lon_name = $lon_name - 360" $west_fname $west_fname
+
+# Turn longitude into record dimension
+ncmkrec $lon_name $east_fname $east_fname
+ncmkrec $lon_name $west_fname $west_fname
+
+# Paste files back together:
+ncrcat $west_fname $east_fname $out_fname
+rm $east_fname
+rm $west_fname
+
+# Reorder dimensions
+ncpdq -O -a "$all_dims" $out_fname $out_fname
