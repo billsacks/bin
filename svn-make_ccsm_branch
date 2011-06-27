@@ -1,0 +1,323 @@
+#!/bin/bash
+
+# Bill Sacks
+# 4-15-11
+
+# This script creates a branch for a ccsm component, along with doing
+# all of the other work that needs to happen when creating a branch
+# (creating a branch_tags directory, and making the first branch tag).
+#
+# The starting point for the branch will be the tag name of the
+# current directory, unless another URL is specified.
+
+# Usage: svn_create_ccsm_branch branch_name description
+
+# ----------------------------------------------------------------------
+# SOURCE EXTERNAL FUNCTIONS
+# ----------------------------------------------------------------------
+
+# Note that the following must be in your path, or the current directory
+
+source do_cmd.bash
+
+# ----------------------------------------------------------------------
+# LOCAL FUNCTIONS DEFINED HERE
+# ----------------------------------------------------------------------
+
+function Usage {
+    echo "Usage: $0 branch_name description"
+    echo ""
+    echo "This script creates a branch for a ccsm component, along with doing"
+    echo "all of the other work that needs to happen when creating a branch"
+    echo "(creating a branch_tags directory, and making the first branch tag)."
+    echo ""
+    echo "'branch_name' is the name of the new branch (do NOT include full URL)."
+    echo "'description' is used to create the svn logmsg."
+    echo "   the full log messages will be something like:"
+    echo "   branch:                'branch for <description>'"
+    echo "   branch_tags directory: 'branch tags for <description>'"
+    echo "   branch tag:            '<branch>: baseline tag corresponding to <copied_tag>'"
+    echo ""
+    echo "The tag that is copied to create the new branch can be given by -u URL,"
+    echo "or else retrieved from the URL of the current directory."
+    echo "In either case, the URL must be a trunk or branch tag, without additional nesting."
+    echo "For example, the URL can be of the form:"
+    echo "  https://svn-ccsm-models.cgd.ucar.edu/drv/seq_mct/trunk_tags/drvseq3_1_51"
+    echo "Or:"
+    echo "  https://svn-ccsm-models.cgd.ucar.edu/drv/seq_mct/branch_tags/iens_neon_tags/iens_neon_03_drvseq3_1_47"
+    echo "But NOT:"
+    echo "  https://svn-ccsm-models.cgd.ucar.edu/clm2/trunk_tags/clm4_0_20/models/lnd/clm"
+    echo "The script doesn't know how to handle this extra nesting, although the following would work:"
+    echo "  https://svn-ccsm-models.cgd.ucar.edu/clm2/trunk_tags/clm4_0_20"
+    echo ""
+    echo "The following are optional arguments:"
+    echo "[-d]: Do a dry run: echo svn commands that would be done,"
+    echo "      but don't execute them."
+    echo ""
+    echo "[-s]: After creating the new branch, svn switch the current"
+    echo "      directory to this branch."
+    echo "      (Only done if URL of current directory is the same as"
+    echo "      the URL that is the starting point for the new branch"
+    echo "      -- this will always be true if -u URL is NOT specified)"
+    echo ""
+    echo "[-u URL]: Use the specified URL as the starting point for"
+    echo "          the new branch."
+    echo "          (must be a trunk or branch tag)"
+    echo "          (if not given, the script uses the URL of the current"
+    echo "          directory, which must be a trunk or branch tag)"
+    echo ""
+    echo ""
+    echo "Example: $0 -s coolbranch 'doing cool stuff'"
+    echo "Also suppose that the URL of the current directory is:"
+    echo "  https://svn-ccsm-models.cgd.ucar.edu/drv/seq_mct/trunk_tags/drvseq3_1_51"
+    echo "This will create a branch by copying the drvseq3_1_51 tag."
+    echo "The branch will be created in the following URL:"
+    echo "  https://svn-ccsm-models.cgd.ucar.edu/drv/seq_mct/branches/coolbranch"
+    echo "In addition, a corresponding branch_tags directory will be created,"
+    echo "and a new branch tag will be created with the name:"
+    echo "  https://svn-ccsm-models.cgd.ucar.edu/drv/seq_mct/branch_tags/coolbranch_tags/coolbranch_00_drvseq3_1_51"
+
+    echo "Finally, because of the -s argument, the current directory"
+    echo "will be svn switch'ed to the new branch"
+    echo ""
+}
+
+# This function echoes the svn URL of the current directory.
+# If there is an error, the error string is echoed.
+function svn_url {
+    local my_url
+    
+    # Get the line containing the URL from svn info:
+    my_url=`svn info | grep "^URL: "`
+    if [ $? -ne 0 ]; then
+	echo "ERROR trying to obtain URL from svn info"
+	return 1
+    fi
+    
+    # get rid of the leading "URL: ", so we just have the URL itself
+    my_url=${my_url/URL: /}
+
+    echo $my_url
+}
+
+# ----------------------------------------------------------------------
+# BEGIN MAIN SCRIPT
+# ----------------------------------------------------------------------
+
+# ----------------------------------------------------------------------
+# Handle command-line arguments
+# ----------------------------------------------------------------------
+
+# define default values:
+dryrun=0
+switch=0
+source_url=""
+
+while getopts dsu: opt; do
+    case $opt in
+	d) dryrun=1;;
+	s) switch=1;;
+	u) source_url=$OPTARG;;
+	\?) Usage
+    esac
+done
+
+# shift off the arguments we read with getopts:
+shift `expr $OPTIND - 1`
+
+if [[ $# -ne 2 ]]; then
+    Usage
+    exit 1
+fi
+
+branch=$1
+description=$2
+
+# Make sure branch name doesn't contain any non-word characters:
+# The grep will return 0 if a non-word character is found, 1 if not:
+echo "$branch" | grep '\W' > /dev/null
+nonword=$?
+if [ $nonword -eq 0 ]; then
+    echo "ERROR: branch name cannot contain non-word characters"
+    echo "branch specified: <${branch}>"
+    exit 1
+fi
+
+# ----------------------------------------------------------------------
+# If URL isn't specified, get current URL from svn
+# ----------------------------------------------------------------------
+
+if [ -z "$source_url" ]; then
+    echo "Getting URL of current directory from svn:"
+
+    source_url=$(svn_url)
+    if [ $? -ne 0 ]; then
+	# for non-zero return value, source_url holds the error string
+	echo $source_url
+	exit 1
+    fi
+
+    echo $source_url
+    echo ""
+fi
+
+# ----------------------------------------------------------------------
+# Get name of the tag for this URL, and determine root for 'branches' and 'branch_tags' directories
+# ----------------------------------------------------------------------
+
+curtag=`basename $source_url`
+root=`dirname $source_url`
+declare -i numups
+numups=0
+
+# repeatedly go up a level until we find a root that ends with "trunk_tags" or "branch_tags"
+until [[ `basename $root` = "trunk_tags" || `basename $root` = "branch_tags" || $root = '.' ]]; do
+    root=`dirname $root`
+    numups=$numups+1
+done
+
+if [ $root = '.' ]; then
+    echo "ERROR: URL does not appear to be a branch tag or trunk tag"
+    echo "URL: $source_url"
+    exit 1
+fi
+
+# Check nesting level:
+# If this is a trunk tag, then we expect the url to be of the form:
+# <something>/trunk_tags/<some_tag>
+# If this is a branch tag, then we expect the url to be of the form:
+# <something>/branch_tags/<branch_name>_tags/<some_tag>
+if [[ `basename $root` = "trunk_tags" && $numups -ne 0 ]]; then
+    echo "ERROR: URL appears to be a trunk tag, but nesting level is unexpected"
+    echo "URL: $source_url"
+    exit 1
+fi
+if [[ `basename $root` = "branch_tags" && $numups -ne 1 ]]; then
+    echo "ERROR: URL appears to be a branch tag, but nesting level is unexpected"
+    echo "URL: $source_url"
+    exit 1
+fi
+
+# If we get here, then all is good; go up one more level to get the actual root
+root=`dirname $root`
+
+echo "Copying from tag: $curtag"
+echo "root: $root"
+echo ""
+
+# ----------------------------------------------------------------------
+# Determine full URLs for branch and branch tag, and log messages
+# ----------------------------------------------------------------------
+
+branch_url=$root/branches/$branch
+tags_url=$root/branch_tags/${branch}_tags
+this_tag_url=$tags_url/${branch}_00_$curtag
+
+branch_msg="branch for $description"
+tags_msg="branch tags for $description"
+this_tag_msg="${branch}: baseline tag corresponding to $curtag"
+
+# ----------------------------------------------------------------------
+# Make sure desired branch doesn't already exist
+# ----------------------------------------------------------------------
+
+echo "Making sure desired branch doesn't already exist..."
+result=`svn ls $root/branches | grep -w $branch`
+# Note: unlike for other svn commands, we're not checking for an error in the svn command here
+# (because a return status of 1 could just indicate that the grep failed to find anything)
+if [ -n "$result" ]; then
+    echo "ERROR: desired branch URL already exists!"
+    echo "branch_url: $branch_url"
+    exit 1
+else
+    echo "Good."
+fi
+echo ""
+
+# Note: we don't have to explicitly check the desired branch_tags
+# directory, because svn mkdir won't let us overwrite an existing
+# directory.
+
+# ----------------------------------------------------------------------
+# Confirm planned changes with user, abort if user does not confirm
+# ----------------------------------------------------------------------
+
+echo "Please confirm planned copy:"
+echo "From:    $source_url"
+echo "To:      $branch_url"
+echo "logmsg:  '$branch_msg'"
+echo "New tag: $this_tag_url"
+echo "logmsg:  '$this_tag_msg'"
+echo ""
+REPLY=""
+while [[ $REPLY != "n" && $REPLY != "N" && $REPLY != "y" && $REPLY != "Y" ]]; do
+    read -p "Okay (y/n)? "
+done
+
+if [[ $REPLY = "n" || $REPLY = "N" ]]; then
+    echo "Aborting"
+    exit 0
+fi
+
+echo ""
+
+# ----------------------------------------------------------------------
+# Make new branch
+# ----------------------------------------------------------------------
+
+do_cmd "svn cp $source_url $branch_url -m '$branch_msg'" $dryrun
+if [ $? -ne 0 ]; then
+    echo "ERROR creating new branch"
+    exit 1
+fi
+
+# ----------------------------------------------------------------------
+# Make new branch tag
+# ----------------------------------------------------------------------
+
+do_cmd "svn mkdir $tags_url -m '$tags_msg'" $dryrun
+if [ $? -ne 0 ]; then
+    echo "ERROR creating new branch tags directory"
+    exit 1
+fi
+
+do_cmd "svn cp $branch_url $this_tag_url -m '$this_tag_msg'" $dryrun
+if [ $? -ne 0 ]; then
+    echo "ERROR creating new branch tag"
+    exit 1
+fi
+
+echo ""
+
+# ----------------------------------------------------------------------
+# svn switch to the new branch, if desired
+# ----------------------------------------------------------------------
+
+if [ $switch -eq 1 ]; then
+    cur_url=$(svn_url)
+    if [ $? -ne 0 ]; then
+	# for non-zero return value, cur_url holds the error string
+	echo $cur_url
+	exit 1
+    fi
+
+    if [[ $cur_url != $source_url ]]; then
+	echo "WARNING: Refusing to svn switch when current URL differs from source URL"
+	echo "WARNING: Current URL: $cur_url"
+	echo "WARNING: Source URL:  $source_url"
+	echo "WARNING: Please svn switch manually"
+    else
+	do_cmd "svn switch $branch_url" $dryrun
+	if [ $? -ne 0 ]; then
+	    echo "ERROR svn switch'ing to branch"
+	    exit 1
+	fi
+    fi
+
+else  # switch flag not set
+    echo "Switch flag not set"
+    echo "You may now want to svn switch manually"
+fi
+
+    
+
