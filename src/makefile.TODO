@@ -1,0 +1,33 @@
+Look at suggested best practices for makefiles (if I can find such a
+thing in the make manual), to see if there are some hints on the best
+way to structure / restructure this makefile.
+
+Move some of the variable definitions to a more logical order (i.e., put
+the most-likely-changed things up front).
+
+This makefile is still set up for PEGASUS... get rid of a lot of the
+targets and a lot of the *_OBJECTS variables
+
+
+
+
+Maybe do the following:
+
+Create another common makefile containing implicit rules
+- Or can we put everything in a single common makefile? Actually, I
+think that will work
+- But check: when are variables expanded in these rules? If we added
+some stuff to a variable name in the specific makefile, would it be too
+late, if these implicit rules are defined in makefile.compiler? (i.e.,
+consider this: if implicit rules are defined in makefile.compiler, then
+the implicit rules, which use some of the variables, could be defined
+before the variables get their final value... is this a problem? This
+hinges on the question of whether the variable is expanded when the
+implicit rule is defined or when it is used)
+
+If I create another common makefile, then perhaps rename makefile.common
+to makefile.compiler, or something like that
+
+
+
+

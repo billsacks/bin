@@ -1,0 +1,17 @@
+The concept of the makefile(s) here is: We will eventually have a
+separate directory for each executable, as well as one or more
+directories containing shared code (netcdf4d.f90, errorMod.f90,
+typeMod.F90, etc.). Each subdirectory that contains code for an
+executable will contain its own makefile. This makefile will have a
+format similar to the 'makefile' in this directory (but see
+makefile.TODO: we still need to make some changes to the makefile in
+this directory). It will contain rules for building the executable in
+the given sub-directory, and will contain any necessary modifications to
+the various variables (e.g., adding -lnetcdf to the LD_OPTIONS variable,
+if necessary).
+
+The makefile in each sub-directory will 'include' makefile.config (which
+is specific to that sub-directory) and the 'makefile.common' file in the
+parent directory. This makefile.common file will contain the aspects of
+the makefile that are common to all tools; we just have one instance of
+this file that will be shared by all the sub-directories.

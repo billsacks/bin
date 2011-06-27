@@ -1,0 +1,158 @@
+# This file contains makefile commands common to the makefiles in all sub-directories
+
+# Requires that the following variables already be defined:
+# - FC
+# - OPT
+# - R_PREC
+
+# If any required variable wasn't present in makefile.config,
+#  halt with an error message
+ifndef FC
+$(error FC not defined in makefile.config)
+endif
+ifndef OPT
+$(error OPT not defined in makefile.config)
+endif
+ifndef R_PREC
+$(error R_PREC not defined in makefile.config)
+endif
+
+
+# --------------------------------------------------------------------------
+# Compiler options
+# --------------------------------------------------------------------------
+
+ifeq ($(FC), ifort)
+
+# -- IFORT compiler on Mac --
+
+FC77 = ifort
+FC90 = ifort
+LD = ifort
+
+ifeq ($(OPT), opt)
+
+# Default optimization, warnings on:
+# Note that ifort uses -O2 by default
+# If don't want any optimization, must specify that explicitly with -O0
+# F_OPTIONS = -warn all
+
+# Optimized:
+F_OPTIONS = -O3 -ipo
+
+endif
+
+ifeq ($(OPT), debug)
+
+# WJS (4-18-08): There is a bug in the ifort compiler that makes compilation with -g not work
+# F_OPTIONS = -g -warn all -check all -traceback
+F_OPTIONS = -O0 -warn all -check all -traceback -fpe0
+
+endif
+
+# define level of precision of reals (see makefile.config)
+EXTRA_DEFINES = -DR_PREC=$(R_PREC)
+
+
+F_OPTIONS := $(F_OPTIONS) $(EXTRA_DEFINES)
+
+# Specific options for F77 and F90:
+F77_OPTIONS = $(F_OPTIONS) -132
+F90_OPTIONS = $(F_OPTIONS)
+
+endif
+# -- END IFORT compiler on Mac --
+
+
+ifeq ($(FC), xlf)
+
+# -- XLF compiler on Mac --
+
+
+FC77 = xlf
+FC90 = xlf90
+LD = xlf90
+
+ifeq ($(OPT), opt)
+
+# safe compile, optimized:
+# F_OPTIONS = -O2 -qunroll 
+
+# more agressive optimization, but qstrict should keep the answer the same:
+F_OPTIONS = -O3 -qunroll -qstrict
+
+endif
+
+ifeq ($(OPT), debug)
+
+# F_OPTIONS =
+
+# enable debugging:
+# also enable various options that halt the program on any floating point exceptions, 
+# and initialize variables in subroutines to NaN (to make sure we're not using them before they're set)
+#  - note that 7FF7FFFF is signaling NaN for double-precision reals (when copied into each set of 4 bytes)
+#	- however, it's a QUIET NaN for single-precision reals
+#	- to initialize single-precision reals as signaling NaN, use 7FBFFFFF
+F_OPTIONS = -g -qflttrap=invalid:overflow:zerodivide:enable -qfloat=nans -qsigtrap=xl__trcedump -qinitauto=7FF7FFFF
+
+endif
+
+
+# Things defined for the purpose of the preprocessor:
+# We're noting here that XLF supports the ieee extensions to FORTRAN 95, which we use in the NAN module
+# Note that if we don't define this, it simply means that we use a huge value rather than NaN
+# Also, define level of precision of reals (see makefile.config)
+EXTRA_DEFINES = -DUSES_IEEE_EXTENSIONS,-DR_PREC=$(R_PREC)
+
+F_OPTIONS := $(F_OPTIONS) -WF,$(EXTRA_DEFINES)
+
+# Specific options for F77 and F90:
+F77_OPTIONS = $(F_OPTIONS) -qfixed=132 -qsuffix=cpp=F
+F90_OPTIONS = $(F_OPTIONS) -qsuffix=f=f90:cpp=F90
+
+endif
+# -- END XLF compiler on Mac --
+
+ifeq ($(FC), gfortran)
+
+# -- gfortran compiler --
+
+FC77 = gfortran
+FC90 = gfortran
+LD = gfortran
+
+ifeq ($(OPT), opt)
+
+F_OPTIONS = -O3
+
+endif
+
+ifeq ($(OPT), debug)
+
+F_OPTIONS = -g -Wall
+
+endif
+
+# define level of precision of reals (see makefile.config)
+EXTRA_DEFINES = -DR_PREC=$(R_PREC)
+
+
+F_OPTIONS := $(ALL_F_OPTIONS) $(EXTRA_DEFINES)
+
+# Specific options for F77 and F90:
+F77_OPTIONS = $(ALL_F_OPTIONS) -ffixed-line-length-132
+F90_OPTIONS = $(ALL_F_OPTIONS)
+
+endif
+# -- END gfortran compiler --
+
+
+# --------------------------------------------------------------------------
+# Make sure that some compiler was chosen
+# --------------------------------------------------------------------------
+
+# Note that FC77, FC90 and LD are all set at the same time
+# So if one is undefined, then all are undefined (and vice versa)
+ifndef FC90
+$(error FC90 not set: make sure a valid value is specified for FC in makefile.config)
+endif
