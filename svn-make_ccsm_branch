@@ -28,7 +28,7 @@ source do_cmd.bash
 # ----------------------------------------------------------------------
 
 function Usage {
-    echo "Usage: $0 branch_name description"
+    echo "Usage: $0 [-dhs] [-u url] branch_name description"
     echo ""
     echo "This script creates a branch for a ccsm component, along with doing"
     echo "all of the other work that needs to happen when creating a branch"
