@@ -1,20 +1,19 @@
 #!/bin/bash
 
 # Bill Sacks
-# 3-6-09
+# 3-19-10
 
-# This script converts a variable in a NetCDF file to byte type.
+# This script converts a variable in a NetCDF file to a specified type.
 # It can also change the missing_value and _FillValue attributes for you,
-# as well as handling the conversion of other attributes to byte type, if desired.
-
-# WJS 3-19-10: THIS IS OBSOLETE: IT HAS BEEN REPLACED BY THE MORE GENERAL NCCONVERTTYPE
+# as well as handling the conversion of other attributes to the specified type, if desired.
 
 function Usage {
-    echo "Usage: $0 infile varname outfile [attname ...]"
+    echo "Usage: $0 infile varname outfile type [attname ...]"
     echo "infile: Input NetCDF file name"
-    echo "varname: Name of variable to convert to byte type"
+    echo "varname: Name of variable to convert to the specified type"
     echo "outfile: Output NetCDF file name"
-    echo "attname... : If provided, one or more attributes of <varname>; these attributes will also be converted to byte type"
+    echo "type: Desired output type; must be one of 'byte', 'short', 'int', 'float', or 'double'"
+    echo "attname... : If provided, one or more attributes of <varname>; these attributes will also be converted to the specified type"
     echo ""
     echo "The following are optional arguments:"
     echo "[-m missval]: Change the missing_value and _FillValue attributes to <missval>."
@@ -45,14 +44,31 @@ done
 # shift off the arguments we read with getopts:
 shift `expr $OPTIND - 1`
 
-if [[ $# -lt 3 ]]; then
+if [[ $# -lt 4 ]]; then
     Usage
 fi
 
 infile=$1
 varname=$2
 outfile=$3
-shift 3    # shift off those three arguments
+type=$4
+shift 4    # shift off those three arguments
+
+# -----------------------------
+# Parse type
+# -----------------------------
+
+case $type in
+    byte) type_code=b;;
+    short) type_code=s;;
+    int) type_code=i;;
+    float) type_code=f;;
+    double) type_code=d;;
+    *) 
+	echo "ERROR: Type must be one of 'byte', 'short', 'int', 'float', or 'double'"
+	exit 1
+	;;
+esac
 
 # -----------------------------
 # If a missing data value is given, set missing_value and _FillValue;
@@ -60,25 +76,25 @@ shift 3    # shift off those three arguments
 # -----------------------------
 
 if [ -n "$missval" ]; then
-    ncatted -a missing_value,$varname,o,b,$missval -a _FillValue,$varname,o,b,$missval $infile $outfile.tmp.$$
+    ncatted -a missing_value,$varname,o,$type_code,$missval -a _FillValue,$varname,o,$type_code,$missval $infile $outfile.tmp.$$
 else
     ncatted -a missing_value,$varname,d,, -a _FillValue,$varname,d,, $infile $outfile.tmp.$$
 fi
 
 # -----------------------------
-# Convert data to byte type
+# Convert data to desired type
 # -----------------------------
 
-ncap2 -s "$varname=byte($varname)" $outfile.tmp.$$ $outfile
+ncap2 -s "$varname=$type($varname)" $outfile.tmp.$$ $outfile
 rm $outfile.tmp.$$
 
 # -----------------------------
-# Change other attributes to byte type, if desired
+# Change other attributes to the specified type, if desired
 # -----------------------------
 
 while (( $# > 0 )); do  # loop through remaining command-line arguments
     att=$1
-    ncap2 -A -s "${varname}@$att = byte(${varname}@$att)" $outfile $outfile
+    ncap2 -A -s "${varname}@$att = $type(${varname}@$att)" $outfile $outfile
     shift
 done
     
