@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Move the N oldest files / directories in the current directory into
-# a new folder called "trash".
+# Move any files / directories in the current directory that are more
+# than N days old into a new folder called "trash".
 #
 # The point of this is: Then we can delete these old files /
 # directories (after reviewing them).
@@ -22,10 +22,10 @@ trashdir=trash
 
 function Usage {
     echo "Usage: $0 N"
-    echo "N: number of oldest files / directories to move to 'trash'"
+    echo "N: files / directories at least N days old are moved to trash"
     echo ""
-    echo "Moves the N oldest files / directories in the current directory"
-    echo "to a new folder called 'trash', then lists the contents of the 'trash' directory."
+    echo "Move any files / directories in the current directory that are more"
+    echo "than N days old into a new folder called 'trash'"
     echo ""
 }
 
@@ -42,7 +42,7 @@ if [ -e $trashdir ]; then
 fi
 mkdir $trashdir
 
-oldfiles=`ls -t -1 | tail -$n`
+oldfiles=`find * -mtime +$n -prune`
+ls -Gdlrt $oldfiles
 mv $oldfiles $trashdir
 
-ls -Glrt $trashdir
