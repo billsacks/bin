@@ -42,7 +42,7 @@ if [ -e $trashdir ]; then
 fi
 mkdir $trashdir
 
-oldfiles=`find * -mtime +$n -prune`
+oldfiles=`find * -prune -mtime +$n`
 ls -Gdlrt $oldfiles
 mv $oldfiles $trashdir
 
