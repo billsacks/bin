@@ -16,9 +16,10 @@ output is put in *_optyp.nc (where optyp is, for example, "sbt"). Note
 that we ignore any file that isn't present in both directories.
 
 If the -q command-line option is specified, then we also run the ncl
-script ~/ncl/quick_look.ncl, thus generating a pdf with plots of all the
-difference files generated. The output of this script is put in a file
-with the filename given through this command-line option.
+script ~/ncl/quick_look.ncl, thus generating a text file with summary
+stats of all the difference files generated. The output of this script
+is put in a file with the filename given through this command-line
+option.
 
 This program replaces the now-obsolete ncdiff_all and display_all_diffs.
 
@@ -44,7 +45,7 @@ Puts output here in *_<optyp>.nc
 The following are optional arguments:
 [-o optyp]: Use the given ncbo optyp in place of the default, sbt
 [-q filename]: After doing ncbo on all files, run quick_look.ncl to
-output maps of all variables to 'filename.pdf'
+output summary stats of all variables to 'filename.txt'
 
 Example: to do ratio, with numerator equal to each file here with
 extension *_sbt.nc, and denominator equal to each corresponding file in

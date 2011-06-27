@@ -7,7 +7,7 @@
 #  and all corresponding *.nc files (or *there_extension.nc files) in the directory given by <path>,
 #  putting output here in *_optyp.nc
 # we ignore any file that isn't present in both directories
-# if -q is specified, then we also use the ncl script quick_look.ncl (in ~/ncl) to output maps of all variables to the given file
+# if -q is specified, then we also use the ncl script quick_look.ncl (in ~/ncl) to output summary stats of all variables to the given file
 
 function Usage {
     echo "Usage: $0 path [here_extension [there_extension]]"
@@ -20,7 +20,7 @@ function Usage {
     echo ""
     echo "The following are optional arguments:"
     echo "[-o optyp]: Use the given ncbo optyp in place of the default, sbt"
-    echo "[-q filename]: After doing ncbo on all files, run quick_look.ncl to output maps of all variables to 'filename.pdf'"
+    echo "[-q filename]: After doing ncbo on all files, run quick_look.ncl to output summary stats to 'filename.txt'"
     echo ""
     echo "Example: to do ratio, with numerator equal to each file here with extension *_sbt.nc, and denominator equal to each corresponding file in other_path with extension *.nc:"
     echo "$0 -o dvd -q quick_look_ratio other_path '_sbt'"
