@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-#testing
+
 # Meant to take as input the output from svn status
 # Only prints lines that do NOT begin with ? (or ? after some number of spaces)
 #  - i.e., ignore unversioned items
