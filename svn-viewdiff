@@ -1,6 +1,9 @@
 #!/bin/sh
 # -*- coding:utf-8;mode:shell-script;mode:font-lock -*-
 
+# WJS (1-13-11): Original obtained from
+# http://svn.apache.org/repos/asf/subversion/branches/scons-build-system/www/tools_contrib.html
+
 ##
 # GNU diff wrapper for FileMerge.
 #
@@ -41,7 +44,7 @@ usage ()
   if [ $# != 0 ]; then echo "$@"; echo ""; fi;
 
   echo "${program}: usage:";
-  echo "    ${program} [options] file1 file2";
+  echo "    ${program} [options] -L label1 -L label2 file1 file2";
   echo "";
   echo "options:";
   echo "  --help                     Print this help";
@@ -49,7 +52,6 @@ usage ()
   echo "  -C --context X             Ignored";
   echo "  -u                         Ignored";
   echo "  -U --unified X             Ignored";
-  echo "  -L --label X               Ignored";
  #echo "  -p --show-c-function       Ignored";
  #echo "  -F --show-function-line X  Ignored";
   echo "  -q --brief                 Ignored";
@@ -66,6 +68,8 @@ usage ()
 }
 
 # Process arguments
+declare -i labelnum
+labelnum=0
 while [ $# != 0 ]; do
   case "$1" in
     --help)
@@ -73,12 +77,25 @@ while [ $# != 0 ]; do
       exit 0;
       ;;
 
+# WJS (1-13-11): Added ability to create links to files with
+# reasonable names
+    -L|--label)
+      shift 1;  # get rid of the "-L"
+      # get the file name, up to the first whitespace character:
+      declare -a labelarr=($1)  # turn $1 into an array, which splits
+				# on whitespace
+      label[$labelnum]=${labelarr[0]}  # just get the first element of
+				# that array
+      shift 1;  # shift the file name away
+      labelnum+=1
+      ;;
+
+
     # These display options would not make sense for FileMerge
     -c                     ) shift 1; ;; # Context diff
     -C|--context           ) shift 2; ;; # Context diff
     -u                     ) shift 1; ;; # Unified diff
     -U|--unified           ) shift 2; ;; # Unified diff
-    -L|--label             ) shift 2; ;; #   Label
    #-p|--show-c-function   ) shift 1; ;; #   C function names
    #-F|--show-function-line) shift 2; ;; #   Show recent line w/ regex
     -q|--brief             ) shift 1; ;; # Output only whether files differ
@@ -100,6 +117,12 @@ while [ $# != 0 ]; do
   esac;
 done;
 
+# WJS (1-13-11): Error checking: expect to have 2 labels
+if [ $labelnum != 2 ]; then
+    usage "Expect two label arguments"
+    exit 1
+fi
+
 if [ $# != 2 ]; then
     usage "Invalid arguments: $*";
     exit 1;
@@ -107,6 +130,16 @@ fi;
 
 file1="$1"; shift;
 file2="$1"; shift;
+
+# WJS (1-13-11): Create links to the actual files, with meaningful
+# names
+tmp=$(mktemp -d /tmp/viewdiff.links.XXXX)
+mkdir $tmp/left
+mkdir $tmp/right
+ln "${file1}" "${tmp}/left/${label[0]}"
+file1="${tmp}/left/${label[0]}"
+ln "${file2}" "${tmp}/right/${label[1]}"
+file2="${tmp}/right/${label[1]}"
 
 ##
 # Do The Right Thing
@@ -123,6 +156,8 @@ fi;
 
 merge="${file2}";
 
+# WJS (1-13-11): It's possible that my above code, in which I create
+# my own links, breaks the below code
 tmp="";
 
 if [ $(dirname "${file1}") == "/tmp" ]; then
