@@ -45,9 +45,12 @@ usage ()
 
   echo "${program}: usage:";
   echo "    ${program} [options] -L label1 -L label2 file1 file2";
+  echo "where the labels give what is displayed for each file,"
+  echo "and the file names give the actual paths to the files"
   echo "";
   echo "options:";
   echo "  --help                     Print this help";
+  echo "  --prefix                   append this prefix to each file, for display purposes"
   echo "  -c                         Ignored";
   echo "  -C --context X             Ignored";
   echo "  -u                         Ignored";
