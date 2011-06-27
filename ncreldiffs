@@ -18,9 +18,14 @@
 #      magnitude of the variables themselves (not the differences).
 #      Conceptually, we are treating the files in <path> as the control
 #      run, and determine relative differences from this control run.
+#  - Average absolute value in the files here
+#    - This is the "Expt_Avg_Magnitude" column (conceptually, we treat
+#      the files here as the "experimental" run)
 #  - Relative differences: min, max, average & average absolute value
 #    - These are calculated by dividing the min, max, average &
-#      average_abs of the differences by the Avg_Magnitude
+#      average_abs of the differences by the Avg_Magnitude (i.e., the
+#      average magnitude of the variables in <path>, which we treat as
+#      the control run)
 #    - Note that this is different from dividing each grid cell's
 #      difference by that grid cell's magnitude; here, the denominator
 #      is the average magnitude, averaged across space
@@ -143,7 +148,7 @@ if [[ ! -d $there_path ]]; then
     exit 1
 fi
 
-# Perform quick_look on the files in <path> to get the average magnitudes of each variable:
+# Perform quick_look on the files in <path> to get the average magnitudes of each variable in the "control" run:
 #
 # We build up a list of the files of interest in path. This is slightly
 # difficult because there may be some extraneous files there that aren't
@@ -166,34 +171,49 @@ do
     fi
 done
 export there_files
-echo "Getting average magnitudes: Running quick_look on:"
+echo "Getting average magnitudes in control files: Running quick_look on:"
 echo $there_files
 # Note that pattern will literally be "$there_files" (unexpanded) in
 # quick_look.ncl. The variable will be expanded when the ncl script
 # calls systemfunc("ls ...")
 ncl $quick_look_path 'pattern="$there_files"' output_file=\"$ql_magnitude_file\" 
 
+# Perform quick_look on the files here to get the average magnitudes of each variable in the "experimental" run:
+ql_expt_magnitude_file="ql_expt_magnitudes.$$"
+echo "Getting average magnitudes in experimental files: Running quick_look on:"
+ls *${here_extension}.nc
+ncl $quick_look_path pattern=\"*${here_extension}.nc\" output_file=\"$ql_expt_magnitude_file\"
+
 # Perform ncbo_all on the files to get the differences between the two runs for each variable:
 ql_diff_file="ql_diffs.$$"
 $ncbo_all_path -h "$here_extension" -t "$there_extension" -q "$ql_diff_file" $there_path
 
-# Make sure that the two quick_look output files contain the same variables:
+# Make sure that the three quick_look output files contain the same variables:
 # (Make sure the variable names & levels match up for all lines)
 awk "{print \$$ql_name_col,\$$ql_level_col}" ${ql_magnitude_file}.txt > ${ql_magnitude_file}.vars.txt
+awk "{print \$$ql_name_col,\$$ql_level_col}" ${ql_expt_magnitude_file}.txt > ${ql_expt_magnitude_file}.vars.txt
 awk "{print \$$ql_name_col,\$$ql_level_col}" ${ql_diff_file}.txt > ${ql_diff_file}.vars.txt
+# Check ql_magnitude_file vs. ql_expt_magnitude_file:
+diffs=`diff ${ql_magnitude_file}.vars.txt ${ql_expt_magnitude_file}.vars.txt`
+if [[ $diffs != '' ]]; then
+    echo "ERROR: Differences found in variables included in quick_look output for control magnitudes and experimental magnitudes"
+    exit 1
+fi
+# Check ql_magnitude_file vs. ql_diff_file:
 diffs=`diff ${ql_magnitude_file}.vars.txt ${ql_diff_file}.vars.txt`
 if [[ $diffs != '' ]]; then
     echo "ERROR: Differences found in variables included in quick_look output for magnitudes and differences"
     exit 1
 fi
 rm ${ql_magnitude_file}.vars.txt
+rm ${ql_expt_magnitude_file}.vars.txt
 rm ${ql_diff_file}.vars.txt
 
 # Make the full summary file, containing differences, average magnitude, and relative differences:
-awk -f $ncreldiffs_awk_path -v first_data_col=$ql_first_data_col -v magfile=${ql_magnitude_file}.txt -v abscol=$ql_avg_abs_col -v summary_outfile="${output_file}.summary" ${ql_diff_file}.txt > $output_file
+awk -f $ncreldiffs_awk_path -v first_data_col=$ql_first_data_col -v magfile=${ql_magnitude_file}.txt -v expt_magfile=${ql_expt_magnitude_file}.txt -v abscol=$ql_avg_abs_col -v summary_outfile="${output_file}.summary" ${ql_diff_file}.txt > $output_file
 
 # Print the summary of the summary file to the screen:
 cat ${output_file}.summary
 
 # Remove intermediate files (but note that we do not remove the *_sbt.nc files created by ncbo_all):
-rm ${ql_magnitude_file}.txt ${ql_diff_file}.txt
+rm ${ql_magnitude_file}.txt ${ql_expt_magnitude_file}.txt ${ql_diff_file}.txt

@@ -12,7 +12,10 @@
 #    data (as opposed to header information like the variable name and
 #    level)
 #  - magfile: name of the magnitudes file from ncreldiffs
-#  - abscol: index of the average_abs column in the magnitudes file
+#    - We think of this file as containing the magnitudes of the "control" run;
+#      these are the magnitudes used to calculate relative differences
+#  - expt_magfile: name of the expt_magnitudes file from ncreldiffs
+#  - abscol: index of the average_abs column in the magnitudes files (both magfile and expt_magfile)
 #  - summary_outfile: name of file to which we output a short summary,
 #    giving the mins & maxes over each of the relative difference
 #    columns
@@ -21,8 +24,9 @@
 NR==1 {
     # First print existing header row:
     printf "%s", $0
-    # Then print "Avg_Magnitude"
+    # Then print "Avg_Magnitude" & "Expt_Avg_Magnitude" headers:
     printf "%14s", "Avg_Magnitude"
+    printf "%19s", "Expt_Avg_Magnitude"
     # Then print each element of the existing header row followed by "_Rel"
     for (i=first_data_col; i<=NF; i++) 
 	printf "%12s_Rel", $i
@@ -32,8 +36,9 @@ NR==1 {
     split($0, colnames)
     ncols = NF
 
-    # Get & discard header line from the magfile:
+    # Get & discard header line from the magfile & expt_magfile:
     getline mag_summary < magfile
+    getline expt_mag_summary < expt_magfile
 }
 
 # Data rows:
@@ -42,10 +47,17 @@ NR>1 {
     printf "%s", $0
 
     # Then print the average magnitude, from the magfile:
+    # (This value is the one used for calculating relative differences)
     getline mag_summary < magfile
     split(mag_summary, mag_summary_arr)
     avgmag = mag_summary_arr[abscol]
     printf "%14s", avgmag
+
+    #... and from the expt_magfile:
+    getline expt_mag_summary < expt_magfile
+    split(expt_mag_summary, expt_mag_summary_arr)
+    expt_avgmag = expt_mag_summary_arr[abscol]
+    printf "%19s", expt_avgmag
 
     # Then calculate and print the relative values;
     # also track min & max of each relative value column
