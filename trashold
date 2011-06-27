@@ -1,0 +1,48 @@
+#!/bin/bash
+
+# Move the N oldest files / directories in the current directory into
+# a new folder called "trash".
+#
+# The point of this is: Then we can delete these old files /
+# directories (after reviewing them).
+#
+# Usage: trash_old N
+
+# ----------------------------------------------------------------------
+# Set some parameters here
+# ----------------------------------------------------------------------
+
+# name (including path, if relevant) of trash directory
+trashdir=trash
+
+# ----------------------------------------------------------------------
+# Done setting parameters
+# ----------------------------------------------------------------------
+
+
+function Usage {
+    echo "Usage: $0 N"
+    echo "N: number of oldest files / directories to move to 'trash'"
+    echo ""
+    echo "Moves the N oldest files / directories in the current directory"
+    echo "to a new folder called 'trash', then lists the contents of the 'trash' directory."
+    echo ""
+}
+
+if [ $# -ne 1 ]; then
+    Usage
+    exit 1
+fi
+
+n=$1
+
+if [ -e $trashdir ]; then
+    echo "trash already exists; please remove or rename then re-run this script"
+    exit 1
+fi
+mkdir $trashdir
+
+oldfiles=`ls -t -1 | tail -$n`
+mv $oldfiles $trashdir
+
+ls -Glrt $trashdir
