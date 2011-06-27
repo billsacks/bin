@@ -248,24 +248,35 @@ echo ""
 # Confirm planned changes with user, abort if user does not confirm
 # ----------------------------------------------------------------------
 
-echo "Please confirm planned copy:"
+# Note: if this is a dry run, we do not bother getting confirmation,
+# but still print out the planned changes
+
+if [ $dryrun -eq 0 ]; then
+    echo "Please confirm planned copy:"
+else
+    echo "Dry run only; planned copy:"
+fi
+
 echo "From:    $source_url"
 echo "To:      $branch_url"
 echo "logmsg:  '$branch_msg'"
 echo "New tag: $this_tag_url"
 echo "logmsg:  '$this_tag_msg'"
 echo ""
-REPLY=""
-while [[ $REPLY != "n" && $REPLY != "N" && $REPLY != "y" && $REPLY != "Y" ]]; do
-    read -p "Okay (y/n)? "
-done
 
-if [[ $REPLY = "n" || $REPLY = "N" ]]; then
-    echo "Aborting"
-    exit 0
+if [ $dryrun -eq 0 ]; then
+    REPLY=""
+    while [[ $REPLY != "n" && $REPLY != "N" && $REPLY != "y" && $REPLY != "Y" ]]; do
+	read -p "Okay (y/n)? "
+    done
+
+    if [[ $REPLY = "n" || $REPLY = "N" ]]; then
+	echo "Aborting"
+	exit 0
+    fi
+
+    echo ""
 fi
-
-echo ""
 
 # ----------------------------------------------------------------------
 # Make new branch
@@ -325,5 +336,11 @@ else  # switch flag not set
     echo "You may now want to svn switch manually"
 fi
 
-    
+# ----------------------------------------------------------------------
+# Print any final messages
+# ----------------------------------------------------------------------    
 
+if [ $dryrun -ne 0 ]; then
+    echo ""
+    echo "NOTE: This was a dry run. If you are satisfied, please re-run without the '-d' switch."
+fi
