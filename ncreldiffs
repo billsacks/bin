@@ -13,9 +13,11 @@
 # The main output file contains the following for each level of each variable:
 #  - File, name & level of variable
 #  - Summary of differences: min, max, average & average absolute value
-#  - Average absolute value in the files here
+#  - Average absolute value in the files in <path>
 #    - This is the "Avg_Magnitude" column; it gives the average
-#      magnitude of the variables themselves (not the differences)
+#      magnitude of the variables themselves (not the differences).
+#      Conceptually, we are treating the files in <path> as the control
+#      run, and determine relative differences from this control run.
 #  - Relative differences: min, max, average & average absolute value
 #    - These are calculated by dividing the min, max, average &
 #      average_abs of the differences by the Avg_Magnitude
@@ -87,14 +89,14 @@ fi
 # ----------------------------------------------------------------------
 
 function Usage {
-    echo "Usage: $0 output_file path [here_extension [there_extension]]"
+    echo "Usage: $0 output_file path"
     echo "output_file: name of the file which will contain final summary output"
     echo "  A summary of the summary file is placed in <output_file>.summary, as well as printed to the screen"
     echo "path: the path containing the *.nc files to diff with"
-    echo "here_extension: if provided, only consider files in this directory that are of the form '*here_extension.nc';"
-    echo "  in looking for corresponding files in <path>, ignore 'here_extension'"
-    echo "there_extension: if provided, only consider files in <path> that are of the form '*there_extension.nc';"
-    echo "  ignore this extension in determining corresponding files here"
+    echo ""
+    echo "The following are optional arguments:"
+    echo "[-h here_extension]: only consider files in this directory that are of the form '*here_extension.nc'; in looking for corresponding files in <path>, ignore 'here_extension'"
+    echo "[-t there_extension]: only consider files in <path> that are of the form '*there_extension.nc'; ignore this extension in determining corresponding files here"
     echo ""
     echo "Creates a file containing a summary of the differences and relative"
     echo "differences between all *.nc files (or *here_extension.nc files) in"
@@ -105,22 +107,34 @@ function Usage {
 }
 
 #define default values:
-here_extension=
-there_extension=
+here_extension=""
+there_extension=""
 
-if [[ $# -lt 2  ||  $# -gt 4 ]]; then
+# handle command-line arguments:
+while getopts h:t: opt
+do
+    case $opt in
+	h) here_extension=$OPTARG;;
+	t) there_extension=$OPTARG;;
+	\?) Usage
+    esac
+done
+
+# shift off the arguments we read with getopts:
+shift `expr $OPTIND - 1`
+
+if [[ $# -ne 2 ]]; then
     Usage
     exit 1
 fi
 
 output_file=$1
 there_path=$2
-if [[ $# -gt 1 ]]; then
-    here_extension=$3
-fi
-if [[ $# -gt 2 ]]; then
-    there_extension=$4
-fi
+
+# echo "output_file: <$output_file>"
+# echo "there_path: <$there_path>"
+# echo "here_extension: <$here_extension>"
+# echo "there_extension: <$there_extension>"
 
 if [[ ! -d $there_path ]]; then
     echo "ERROR: $there_path not a directory; halting"
@@ -129,16 +143,39 @@ if [[ ! -d $there_path ]]; then
     exit 1
 fi
 
-# Perform quick_look on the files here to get the average magnitudes of each variable:
-# (Note: although it would be slightly nicer to use the "there" files for the magnitudes
-#  (because those will generally be the "control" case), that is practically more difficult,
-#  since there may be extraneous files in there_path that are not included in the ncbo_all.)
+# Perform quick_look on the files in <path> to get the average magnitudes of each variable:
+#
+# We build up a list of the files of interest in path. This is slightly
+# difficult because there may be some extraneous files there that aren't
+# included in the ncbo_all. Thus, we have to build up this list using
+# code similar to that in the loop in ncbo_all (WARNING: DUPLICATED CODE
+# HERE!). That is, we look at all the files of interest in the current
+# directory, then modify the file name to find the corresponding file in
+# <path>.
 ql_magnitude_file="ql_magnitudes.$$"
-ncl $quick_look_path pattern=\"*${here_extension}.nc\" output_file=\"$ql_magnitude_file\" 
+there_files=""
+for file in *$here_extension.nc
+do
+    file_base=`echo $file | sed "s/$here_extension\.nc//"`  # trim 'here_extension.nc off the end"
+    file_there=$file_base$there_extension.nc
+    if [ -f $there_path/$file_there ]; then   # make sure file exists in the other directory
+	# Add that file to the list of files to process:
+	there_files="$there_files $there_path/$file_there"
+    else
+	echo "$file_there doesn't exist in $there_path"
+    fi
+done
+export there_files
+echo "Getting average magnitudes: Running quick_look on:"
+echo $there_files
+# Note that pattern will literally be "$there_files" (unexpanded) in
+# quick_look.ncl. The variable will be expanded when the ncl script
+# calls systemfunc("ls ...")
+ncl $quick_look_path 'pattern="$there_files"' output_file=\"$ql_magnitude_file\" 
 
 # Perform ncbo_all on the files to get the differences between the two runs for each variable:
 ql_diff_file="ql_diffs.$$"
-$ncbo_all_path -q $ql_diff_file $there_path $here_extension $there_extension
+$ncbo_all_path -h "$here_extension" -t "$there_extension" -q "$ql_diff_file" $there_path
 
 # Make sure that the two quick_look output files contain the same variables:
 # (Make sure the variable names & levels match up for all lines)

@@ -24,17 +24,9 @@ This program replaces the now-obsolete ncdiff_all and display_all_diffs.
 
 --- USAGE ---
 
-ncbo_all path [here_extension [there_extension]]
+ncbo_all path
 
 path: the path containing the *.nc files to diff (etc.) with
-
-here_extension: if provided, only consider files in this directory that
-are of the form '*here_extension.nc'; in looking for corresponding files
-in <path>, ignore 'here_extension'
-
-there_extension: if provided, only consider files in <path> that are of
-the form '*there_extension.nc'; ignore this extension in determining
-corresponding files here
 
 Performs ncbo on all files matching the given pattern here, with all
 files matching the given file in <path>
@@ -42,7 +34,17 @@ files matching the given file in <path>
 Puts output here in *_<optyp>.nc
 
 The following are optional arguments:
+
+[-h here_extension]: only consider files in this directory that are of
+the form '*here_extension.nc'; in looking for corresponding files in
+<path>, ignore 'here_extension'
+
+[-t there_extension]: only consider files in <path> that are of the form
+'*there_extension.nc'; ignore this extension in determining
+corresponding files here
+
 [-o optyp]: Use the given ncbo optyp in place of the default, sbt
+
 [-q filename]: After doing ncbo on all files, run quick_look.ncl to
 output summary stats of all variables to 'filename.txt'
 
@@ -50,7 +52,7 @@ Example: to do ratio, with numerator equal to each file here with
 extension *_sbt.nc, and denominator equal to each corresponding file in
 other_path with extension *.nc:
 
-/Users/sacks/bin/ncbo_all -o dvd -q quick_look_ratio other_path '_sbt'
+/Users/sacks/bin/ncbo_all -h '_sbt' -o dvd -q quick_look_ratio other_path
 
 --- CAVEATS ---
 
