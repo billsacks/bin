@@ -135,7 +135,7 @@ file2="$1"; shift;
 # names. 
 
 # First create a temporary directory to hold these links
-tmp=$(mktemp -d /tmp/viewdiff.links.XXXX)
+linkdir=$(mktemp -d /tmp/viewdiff.links.XXXX)
 
 # Now create a sub-directory for the first file. 
 # Note that we put it in a "left" subdirectory so there aren't
@@ -144,15 +144,15 @@ tmp=$(mktemp -d /tmp/viewdiff.links.XXXX)
 # based on the directory part of label[0]; otherwise the 'ln' command
 # will fail for files in anything but the top-level directory.
 dir=`dirname ${label[0]}`
-mkdir -p $tmp/left/$dir
-ln "${file1}" "${tmp}/left/${label[0]}"
-file1="${tmp}/left/${label[0]}"
+mkdir -p $linkdir/left/$dir
+ln "${file1}" "${linkdir}/left/${label[0]}"
+file1="${linkdir}/left/${label[0]}"
 
 # Now the same, but for the second file.
 dir=`dirname ${label[1]}`
-mkdir -p $tmp/right/$dir
-ln "${file2}" "${tmp}/right/${label[1]}"
-file2="${tmp}/right/${label[1]}"
+mkdir -p $linkdir/right/$dir
+ln "${file2}" "${linkdir}/right/${label[1]}"
+file2="${linkdir}/right/${label[1]}"
 
 # Done creating links to the actual files with meaningful names
 
@@ -197,9 +197,13 @@ else
     opendiff "${file1}" "${file2}" -merge "${merge}";
 fi;
 
-sleep 1
+sleep 2
 
 # Give FileMerge some time before letting svn diff continue and possibly delete
 # any temp files, or before deleting our own temp files.
-# WJS (1-13-11): Reduced sleep time from 2 to 1
-if [ -n "${tmp}" ]; then (sleep 1; rm -rf "${tmp}") & fi;
+# WJS (1-13-11): Added removal of the linkdir temporary directory
+#  Since this is always present, I changed the above sleep to 2, and
+#  removed the sleep statement from the below 'if' statement (before,
+#  the above sleep was 1, and the sleep in the 'if' statement was 2).
+rm -rf "${linkdir}"
+if [ -n "${tmp}" ]; then (rm -rf "${tmp}") & fi;
