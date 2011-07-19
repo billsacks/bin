@@ -24,18 +24,33 @@ repo=https://svn-user-sacks.cgd.ucar.edu
 # ----------------------------------------------------------------------
 
 # ----------------------------------------------------------------------
-# FUNCTIONS
+# SOURCE EXTERNAL FUNCTIONS
+# ----------------------------------------------------------------------
+
+# Note that the following must be in your path, or the current directory
+
+source do_cmd.bash
+
+# ----------------------------------------------------------------------
+# LOCAL FUNCTIONS
 # ----------------------------------------------------------------------
 
 function Usage {
     script=`basename $0`
-    echo "Usage: $script name"
+    echo "Usage: $script [-dh] name"
     echo "name: name of new svn directory to create; can be nested, in"
     echo "which case any necessary parent directories are created"
     echo ""
     echo "Creates a new directory in the svn repo, with appropriate"
     echo "trunk, branch and tags subdirectories, and checks it out to"
     echo "the current directory"
+    echo ""
+    echo "The following are optional arguments:"
+    echo "[-d]: Do a dry run: echo svn commands that would be done,"
+    echo "      but don't execute them."
+    echo ""
+    echo "[-h]: Print this help message and exit"
+    echo ""
     echo ""
     echo "Examples:"
     echo ""
@@ -56,6 +71,19 @@ function Usage {
 
 # Handle command-line arguments
 
+dryrun=0
+
+while getopts dh opt; do
+    case $opt in
+	d) dryrun=1;;
+	h) Usage; exit;;
+	\?) Usage; exit 1
+    esac
+done
+
+# shift off the arguments we read with getopts:
+shift `expr $OPTIND - 1`
+
 if [[ $# -ne 1 ]]; then
     Usage
     exit 1
@@ -74,8 +102,8 @@ fi
 # Create directory and subdirectories
 root=${repo}/$name
 name_base=`basename $name`
-svn mkdir --parents ${root}/trunk ${root}/branches ${root}/tags -m "Creating directories for $name_base"
+do_cmd "svn mkdir --parents ${root}/trunk ${root}/branches ${root}/tags -m 'Creating directories for $name_base'" $dryrun
 
 # Checkout to current directory
-svn co ${root}/trunk .
+do_cmd "svn co ${root}/trunk ." $dryrun
 
