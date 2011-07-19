@@ -1,0 +1,81 @@
+#!/bin/bash
+
+# Bill Sacks
+# 7-18-11
+
+# Do the initial setup involved with adding a new directory to my
+# personal svn repository. Also check it out into the current
+# directory. This is somewhat analogous to doing an 'hg init' if using
+# mercurial. 
+# 
+# Note that no files are put here - after doing this, you need to add
+# things with svn add
+
+# See the usage function for usage.
+
+# ----------------------------------------------------------------------
+# SET PARAMETERS HERE
+# ----------------------------------------------------------------------
+
+repo=https://svn-user-sacks.cgd.ucar.edu
+
+# ----------------------------------------------------------------------
+# DONE SETTING PARAMETERS
+# ----------------------------------------------------------------------
+
+# ----------------------------------------------------------------------
+# FUNCTIONS
+# ----------------------------------------------------------------------
+
+function Usage {
+    script=`basename $0`
+    echo "Usage: $script name"
+    echo "name: name of new svn directory to create; can be nested, in"
+    echo "which case any necessary parent directories are created"
+    echo ""
+    echo "Creates a new directory in the svn repo, with appropriate"
+    echo "trunk, branch and tags subdirectories, and checks it out to"
+    echo "the current directory"
+    echo ""
+    echo "Examples:"
+    echo ""
+    echo "$script testdir"
+    echo "Creates ${repo}/testdir/trunk, branches and tags"
+    echo "and checks out ${repo}/testdir/trunk to the current directory"
+    echo ""
+    echo "$script parentdir/testing"
+    echo "Creates ${repo}/parentdir/testing/trunk, branches and tags"
+    echo "and checks out ${repo}/parentdir/testing/trunk to the"
+    echo "current directory"
+    echo ""
+}
+
+# ----------------------------------------------------------------------
+# BEGIN MAIN SCRIPT
+# ----------------------------------------------------------------------
+
+# Handle command-line arguments
+
+if [[ $# -ne 1 ]]; then
+    Usage
+    exit 1
+fi
+
+name=$1
+
+# Make sure directory doesn't exist
+
+svn ls ${repo}/$name &> /dev/null
+if [ $? -eq 0 ]; then
+    echo "ERROR: desired name already exists in repository"
+    exit 1
+fi
+
+# Create directory and subdirectories
+root=${repo}/$name
+name_base=`basename $name`
+svn mkdir --parents ${root}/trunk ${root}/branches ${root}/tags -m "Creating directories for $name_base"
+
+# Checkout to current directory
+svn co ${root}/trunk .
+
