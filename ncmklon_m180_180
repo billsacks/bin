@@ -13,6 +13,11 @@
 #  - all_dims
 #  - last_west
 
+# Note: ncrcat sometimes fails due to the units of the longitude
+# variable (sometimes with a segmentation fault, sometimes with
+# another error). If this is happening, try setting the units to " "
+# then rerunning.
+
 # Requires:
 # - netCDF operators (NCO)
 # - ncmkrec (A script written by Bill)
@@ -62,3 +67,7 @@ rm $west_fname
 
 # Reorder dimensions
 ncpdq -O -a "$all_dims" $out_fname $out_fname
+
+# Make longitude no longer the record dimension
+ncecat -O $out_fname $out_fname
+ncwa -O -a record $out_fname $out_fname

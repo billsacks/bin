@@ -13,14 +13,23 @@
 #  - all_dims
 #  - last_west
 
+# Note: ncrcat sometimes fails due to the units of the longitude
+# variable (sometimes with a segmentation fault, sometimes with
+# another error). If this is happening, try setting the units to " "
+# then rerunning.
+
 # Requires:
 # - netCDF operators (NCO)
 # - ncmkrec (A script written by Bill)
 
 # define constants:
 
-lon_name="longitude"
-all_dims="time,level,latitude,longitude"  # comma-separated list of all dimensions, in desired order of output file
+lon_name="lon"
+all_dims="lat,lon"  # comma-separated list of all dimensions, in desired order of output file
+
+# Another likely set of these variables:
+# lon_name="longitude"
+# all_dims="time,level,latitude,longitude"  # comma-separated list of all dimensions, in desired order of output file
 
 # farthest-east longitude included in 'west' file
 # note that any point with a longitude between $last_west and 0 will be discarded!
@@ -61,3 +70,7 @@ rm $west_fname
 
 # Reorder dimensions
 ncpdq -O -a "$all_dims" $out_fname $out_fname
+
+# Make longitude no longer the record dimension
+ncecat -O $out_fname $out_fname
+ncwa -O -a record $out_fname $out_fname
