@@ -1,0 +1,9 @@
+do_all_diffs.csh: Compute seasonal and annual averages, given monthly output files
+	- To use it, first modify the variables at the top of the script, then run it from the directory containing the monthly output files	
+
+-------
+The following files are deprecated:
+
+The dodiff.csh and annualavg.csh scripts are used to compute seasonal and annual averages, given monthly output files.
+
+Usage: first run dodiff.csh 4 times, one for each season. Then run annualavg.csh to compute the annual averages given the 4 seasonal averages.
