@@ -28,7 +28,8 @@ source do_cmd.bash
 # ----------------------------------------------------------------------
 
 function Usage {
-    echo "Usage: $0 [-dhs] [-u url] branch_name description"
+    progname=`basename $0`
+    echo "Usage: $progname [-dhs] [-u url] branch_name description"
     echo ""
     echo "This script creates a branch for a ccsm component, along with doing"
     echo "all of the other work that needs to happen when creating a branch"
@@ -75,7 +76,7 @@ function Usage {
     echo "          directory, which must be a trunk or branch tag)"
     echo ""
     echo ""
-    echo "Example: $0 -s coolbranch 'doing cool stuff'"
+    echo "Example: $progname -s coolbranch 'doing cool stuff'"
     echo "Also suppose that the URL of the current directory is:"
     echo "  https://svn-ccsm-models.cgd.ucar.edu/drv/seq_mct/trunk_tags/drvseq3_1_51"
     echo "This will create a branch by copying the drvseq3_1_51 tag."
@@ -88,7 +89,7 @@ function Usage {
     echo "will be svn switch'ed to:"
     echo "  https://svn-ccsm-models.cgd.ucar.edu/drv/seq_mct/branches/coolbranch"
     echo ""
-    echo "Example: $0 -s coolerbranch 'doing even cooler stuff'"
+    echo "Example: $progname -s coolerbranch 'doing even cooler stuff'"
     echo "Also suppose that the URL of the current directory is:"
     echo "  https://svn-ccsm-models.cgd.ucar.edu/clm2/branch_tags/tcens_tags/tcens02_clm4_0_32/models/lnd/clm"
     echo "(note additional nesting below the tag)"
