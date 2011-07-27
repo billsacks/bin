@@ -7,8 +7,8 @@
 # all of the other work that needs to happen when creating a branch
 # (creating a branch_tags directory, and making the first branch tag).
 #
-# The starting point for the branch will be the tag name of the
-# current directory, unless another URL is specified.
+# The starting point for the branch will be the tag name associated
+# with the current directory, unless another URL is specified.
 #
 # Usage: svn-make_ccsm_branch branch_name description
 #
@@ -43,15 +43,17 @@ function Usage {
     echo ""
     echo "The tag that is copied to create the new branch can be given by -u URL,"
     echo "or else retrieved from the URL of the current directory."
-    echo "In either case, the URL must be a trunk or branch tag, without additional nesting."
+    echo "In either case, the URL must be a trunk or branch tag, possibly with additional nesting."
     echo "For example, the URL can be of the form:"
     echo "  https://svn-ccsm-models.cgd.ucar.edu/drv/seq_mct/trunk_tags/drvseq3_1_51"
     echo "Or:"
     echo "  https://svn-ccsm-models.cgd.ucar.edu/drv/seq_mct/branch_tags/iens_neon_tags/iens_neon_03_drvseq3_1_47"
-    echo "But NOT:"
+    echo "It can also have additional directories below the tag, as in:"
     echo "  https://svn-ccsm-models.cgd.ucar.edu/clm2/trunk_tags/clm4_0_20/models/lnd/clm"
-    echo "The script doesn't know how to handle this extra nesting, although the following would work:"
+    echo "The above is treated almost identically to:"
     echo "  https://svn-ccsm-models.cgd.ucar.edu/clm2/trunk_tags/clm4_0_20"
+    echo "The only difference between the last two is in how the svn switch is done (if requested):"
+    echo "the switch is done using the full path, including the additional directories below the tag name"
     echo ""
     echo "The following are optional arguments:"
     echo "[-d]: Do a dry run: echo svn commands that would be done,"
@@ -67,7 +69,8 @@ function Usage {
     echo ""
     echo "[-u URL]: Use the specified URL as the starting point for"
     echo "          the new branch."
-    echo "          (must be a trunk or branch tag)"
+    echo "          (must be a trunk or branch tag, possibly with"
+    echo "          additional nesting that is used for the svn switch)"
     echo "          (if not given, the script uses the URL of the current"
     echo "          directory, which must be a trunk or branch tag)"
     echo ""
@@ -81,9 +84,24 @@ function Usage {
     echo "In addition, a corresponding branch_tags directory will be created,"
     echo "and a new branch tag will be created with the name:"
     echo "  https://svn-ccsm-models.cgd.ucar.edu/drv/seq_mct/branch_tags/coolbranch_tags/coolbranch_00_drvseq3_1_51"
-
     echo "Finally, because of the -s argument, the current directory"
-    echo "will be svn switch'ed to the new branch"
+    echo "will be svn switch'ed to:"
+    echo "  https://svn-ccsm-models.cgd.ucar.edu/drv/seq_mct/branches/coolbranch"
+    echo ""
+    echo "Example: $0 -s coolerbranch 'doing even cooler stuff'"
+    echo "Also suppose that the URL of the current directory is:"
+    echo "  https://svn-ccsm-models.cgd.ucar.edu/clm2/branch_tags/tcens_tags/tcens02_clm4_0_32/models/lnd/clm"
+    echo "(note additional nesting below the tag)"
+    echo "This will create a branch by copying the tcens02_clm4_0_32 tag."
+    echo "The branch will be created in the following URL:"
+    echo "  https://svn-ccsm-models.cgd.ucar.edu/clm2/branches/coolerbranch"
+    echo "In addition, a corresponding branch_tags directory will be created,"
+    echo "and a new branch tag will be created with the name:"
+    echo "  https://svn-ccsm-models.cgd.ucar.edu/clm2/branch_tags/coolerbranch_tags/coolerbranch_00_tcens02_clm4_0_32"
+    echo "Finally, because of the -s argument, the current directory"
+    echo "will be svn switche'ed to:"
+    echo "  https://svn-ccsm-models.cgd.ucar.edu/clm2/branches/coolerbranch/models/lnd/clm"
+    echo "(note the additional nesting below the branch name)"
     echo ""
 }
 
@@ -171,16 +189,51 @@ fi
 # Get name of the tag for this URL, and determine root for 'branches' and 'branch_tags' directories
 # ----------------------------------------------------------------------
 
-curtag=`basename $source_url`
+cur_base=`basename $source_url`
+last_base=''
+cur_remainder=''  # everything to the right of cur_base in the path
+last_remainder=''  # everything to the right of last_base in the path
 root=`dirname $source_url`
+
 declare -i numups
 numups=0
 
 # repeatedly go up a level until we find a root that ends with "trunk_tags" or "branch_tags"
 until [[ `basename $root` = "trunk_tags" || `basename $root` = "branch_tags" || $root = '.' ]]; do
+    last_remainder=$cur_remainder
+    cur_remainder="/${cur_base}${cur_remainder}"
+    last_base=$cur_base
+    cur_base=`basename $root`
     root=`dirname $root`
     numups=$numups+1
+
+    # Error checking: make sure loop invariants are still satisfied:
+    if [[ ${root}/${cur_base}${cur_remainder} != $source_url ]]; then
+	echo "ERROR: loop invariant violated:"
+	echo "root: $root"
+	echo "cur_base: $cur_base"
+	echo "cur_remainder: $cur_remainder"
+	echo "\${root}/\${cur_base}\${cur_remainder}: ${root}/${cur_base}${cur_remainder}"
+	echo "source_url: $source_url"
+	exit 1
+    fi
+    if [[ ${root}/${cur_base}/${last_base}${last_remainder} != $source_url ]]; then
+	echo "ERROR: loop invariant violated:"
+	echo "root: $root"
+	echo "cur_base: $cur_base"
+	echo "last_base: $last_base"
+	echo "last_remainder: $last_remainder"
+	echo "\${root}/\${cur_base}/\${last_base}\${last_remainder}: ${root}/${cur_base}/${last_base}${last_remainder}"
+	echo "source_url: $source_url"
+	exit 1
+    fi
 done
+
+# Now cur_base gives the name one level below "trunk_tags" or
+# "branch_tags", and last_base gives the name two levels below
+# Also, cur_remainder gives the remainder of the path below cur_base,
+# and last_remainder gives the remainder of the path below last_base
+# (the remainders have leading slashes if they are not blank)
 
 if [ $root = '.' ]; then
     echo "ERROR: URL does not appear to be a branch tag or trunk tag"
@@ -188,19 +241,43 @@ if [ $root = '.' ]; then
     exit 1
 fi
 
-# Check nesting level:
+# Determine tag name of this URL based on whether this is a trunk tag
+# or a branch tag
 # If this is a trunk tag, then we expect the url to be of the form:
-# <something>/trunk_tags/<some_tag>
+# <something>/trunk_tags/<some_tag>[/<something>]
+# (the stuff in square brackets is optional, and given by 'cur_remainder')
 # If this is a branch tag, then we expect the url to be of the form:
-# <something>/branch_tags/<branch_name>_tags/<some_tag>
-if [[ `basename $root` = "trunk_tags" && $numups -ne 0 ]]; then
-    echo "ERROR: URL appears to be a trunk tag, but nesting level is unexpected"
-    echo "URL: $source_url"
+# <something>/branch_tags/<branch_name>_tags/<some_tag>[/<something>]
+# (the stuff in square brackets is optional, and given by 'last_remainder')
+if [[ `basename $root` = "trunk_tags" ]]; then
+    curtag=$cur_base
+    remainder=$cur_remainder
+    sourcetag_url=${root}/${cur_base}  # url of the source up to and including the tag (i.e., discarding the remainder)
+elif [[ `basename $root` = "branch_tags" ]]; then
+    if [[ $numups -eq 0 ]]; then
+	echo "ERROR: for branch tags, we expect one directory level between 'branch_tags' and the tag"
+	echo "i.e., we expect <something>/branch_tags/<branch_name>_tags/<some_tag>[/<something>]"
+	echo "but it seems we have <something>/branch_tags/<some_tag> in this case"
+	echo "URL: $source_url"
+	exit 1
+    fi
+
+    curtag=$last_base
+    remainder=$last_remainder
+    sourcetag_url=${root}/${cur_base}/${last_base}  # url of the source up to and including the tag (i.e., discarding the remainder)
+else
+    echo "ERROR: Unexpected basename for root:"
+    echo `basename $root`
     exit 1
 fi
-if [[ `basename $root` = "branch_tags" && $numups -ne 1 ]]; then
-    echo "ERROR: URL appears to be a branch tag, but nesting level is unexpected"
-    echo "URL: $source_url"
+
+# Make sure we set sourcetag_url and remainder properly
+if [[ ${sourcetag_url}${remainder} != $source_url ]]; then
+    echo "ERROR: something went wrong in setting sourcetag_url and/or remainder:"
+    echo "sourcetag_url: $sourcetag_url"
+    echo "remainder: $remainder"
+    echo "\${sourcetag_url}\${remainder}: ${sourcetag_url}${remainder}"
+    echo "source_url: $source_url"
     exit 1
 fi
 
@@ -209,6 +286,7 @@ root=`dirname $root`
 
 echo "Copying from tag: $curtag"
 echo "root: $root"
+echo "remainder: $remainder"
 echo ""
 
 # ----------------------------------------------------------------------
@@ -257,7 +335,7 @@ else
     echo "Dry run only; planned copy:"
 fi
 
-echo "From:    $source_url"
+echo "From:    $sourcetag_url"
 echo "To:      $branch_url"
 echo "logmsg:  '$branch_msg'"
 echo "New tag: $this_tag_url"
@@ -282,7 +360,7 @@ fi
 # Make new branch
 # ----------------------------------------------------------------------
 
-do_cmd "svn cp $source_url $branch_url -m '$branch_msg'" $dryrun
+do_cmd "svn cp $sourcetag_url $branch_url -m '$branch_msg'" $dryrun
 if [ $? -ne 0 ]; then
     echo "ERROR creating new branch"
     exit 1
@@ -328,7 +406,7 @@ if [ $switch -eq 1 ]; then
 	echo "WARNING: Source URL:  $source_url"
 	echo "WARNING: Please svn switch manually"
     else
-	do_cmd "svn switch $branch_url" $dryrun
+	do_cmd "svn switch ${branch_url}${remainder}" $dryrun
 	if [ $? -ne 0 ]; then
 	    echo "ERROR svn switch'ing to branch"
 	    exit 1
