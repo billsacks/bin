@@ -3,16 +3,16 @@
 # Bill Sacks
 # 4-15-11
 
-# This script creates a branch for a ccsm component, along with doing
+# This script creates a branch for a cesm component, along with doing
 # all of the other work that needs to happen when creating a branch
 # (creating a branch_tags directory, and making the first branch tag).
 #
 # The starting point for the branch will be the tag name associated
 # with the current directory, unless another URL is specified.
 #
-# Usage: svn-make_ccsm_branch branch_name description
+# Usage: svn-make_cesm_branch branch_name description
 #
-# Run 'svn-make_ccsm_branch -h' to get more detailed usage.
+# Run 'svn-make_cesm_branch -h' to get more detailed usage.
 
 
 # ----------------------------------------------------------------------
@@ -31,7 +31,7 @@ function Usage {
     progname=`basename $0`
     echo "Usage: $progname [-dhs] [-u url] branch_name description"
     echo ""
-    echo "This script creates a branch for a ccsm component, along with doing"
+    echo "This script creates a branch for a cesm component, along with doing"
     echo "all of the other work that needs to happen when creating a branch"
     echo "(creating a branch_tags directory, and making the first branch tag)."
     echo ""
