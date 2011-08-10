@@ -8,9 +8,10 @@
 # Command-line arguments:
 #  $1: input file name
 #  $2: output file name
-# Other user-customizable constants:
+# Optional arguments:
 #  - lon_name
 #  - all_dims
+# Other user-customizable constants:
 #  - last_west
 
 # Note: ncrcat sometimes fails due to the units of the longitude
@@ -22,32 +23,71 @@
 # - netCDF operators (NCO)
 # - ncmkrec (A script written by Bill)
 
-# define constants:
+# ----------------------------------------------------------------------
+# LOCAL FUNCTIONS DEFINED HERE
+# ----------------------------------------------------------------------
+
+function Usage {
+    progname=`basename $0`
+    echo "Usage: $progname [-a all_dims] [-h] [-l lon_name] input_file output_file"
+    echo ""
+    echo "This script transforms the longitudes of a file from -180..180"
+    echo "to 0..360"
+    echo ""
+    echo "The following are optional arguments:"
+    echo "[-a all_dims]: comma-separated list of all dimensions, in desired order of output file"
+    echo "(defaults to '$all_dims')"
+    echo ""
+    echo "[-h]: print this help message and exit"
+    echo ""
+    echo "[-l]: name of longitude in file"
+    echo "(defaults to '$lon_name')"
+    echo ""
+}
+
+# ----------------------------------------------------------------------
+# BEGIN MAIN SCRIPT
+# ----------------------------------------------------------------------
+
+# ----------------------------------------------------------------------
+# Define constants and default values for optional parameters
+# ----------------------------------------------------------------------
 
 lon_name="lon"
 all_dims="lat,lon"  # comma-separated list of all dimensions, in desired order of output file
 
-# Another likely set of these variables:
-# lon_name="longitude"
-# all_dims="time,level,latitude,longitude"  # comma-separated list of all dimensions, in desired order of output file
-
 # farthest-east longitude included in 'west' file
 # note that any point with a longitude between $last_west and 0 will be discarded!
+# (it's okay for last_west to be closer to 0 than it needs to be)
 last_west="-0.000001"
 
-# done defining constants
+# ----------------------------------------------------------------------
+# Handle command-line arguments
+# ----------------------------------------------------------------------
 
-function Usage {
-    echo "Usage: $0 input_file output_file"
-    exit 1
-}
+while getopts a:hl: opt; do
+    case $opt in
+	a) all_dims=$OPTARG;;
+	h) Usage; exit;;
+	l) lon_name=$OPTARG;;
+	\?) Usage; exit 1
+    esac
+done
+
+# shift off the arguments we read with getopts:
+shift `expr $OPTIND - 1`
 
 if [[ $# -ne 2 ]]; then
     Usage
+    exit 1
 fi
 
 in_fname=$1
 out_fname=$2
+
+# ----------------------------------------------------------------------
+# Do the work
+# ----------------------------------------------------------------------
 
 east_fname="${out_fname}_east.$$"
 west_fname="${out_fname}_west.$$"
@@ -56,7 +96,7 @@ west_fname="${out_fname}_west.$$"
 ncks -d $lon_name,0.,180. $in_fname $east_fname
 ncks -d $lon_name,-180.,$last_west $in_fname $west_fname
 
-# Change western latitudes from -180..0 to 180..360:
+# Change western longitudes from -180..0 to 180..360:
 ncap2 -O -s "$lon_name = $lon_name + 360" $west_fname $west_fname
 
 # Turn longitude into record dimension
