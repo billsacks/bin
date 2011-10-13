@@ -53,12 +53,16 @@ usage ()
   echo "";
   echo "options:";
   echo "  --help                     Print this help";
-  echo "  --prefix                   append this prefix to each file, for display purposes"
+  echo "  --prefix X                 append this prefix to each file, for display purposes"
   echo "                             (e.g., if you have multiple sets of diffs open at once,"
   echo "                             this can be used to group similar diffs together in the"
   echo "                             window menu, by giving them all the same prefix)"
   echo "                             (note: for readability, put a separator like '_' at the"
   echo "                             end of the prefix)"
+  echo "  --sleep X                  sleep for this number of seconds between the call to"
+  echo "                             opendiff and removing temporary files"
+  echo "                             (defaults to 1; increase this if you have problems,"
+  echo "                             e.g., with files not being found)"
   echo "  -c                         Ignored";
   echo "  -C --context X             Ignored";
   echo "  -u                         Ignored";
@@ -82,6 +86,7 @@ usage ()
 declare -i labelnum
 labelnum=0
 prefix=""
+sleeptime=1
 while [ $# != 0 ]; do
   case "$1" in
     --help)
@@ -109,6 +114,12 @@ while [ $# != 0 ]; do
       shift 1; # shift the prefix itself away
       ;;
 
+# Determine time to sleep between call to opendiff and removing temp files
+    --sleep)
+      shift 1; # get rid of the "--sleep"
+      sleeptime=$1
+      shift 1; # shift away the sleeptime itself
+      ;;
 
     # These display options would not make sense for FileMerge
     -c                     ) shift 1; ;; # Context diff
@@ -135,6 +146,8 @@ while [ $# != 0 ]; do
     --|*) break; ;;
   esac;
 done;
+
+echo "sleep $sleeptime"
 
 # WJS (1-13-11): Error checking: expect to have 2 labels
 if [ $labelnum != 2 ]; then
@@ -226,13 +239,11 @@ else
     opendiff "${file1}" "${file2}" -merge "${merge}";
 fi;
 
-sleep 1
 
 # Give FileMerge some time before letting svn diff continue and possibly delete
 # any temp files, or before deleting our own temp files.
+sleep $sleeptime
+
 # WJS (1-13-11): Added removal of the linkdir temporary directory
-#  Since this is always present, I changed the above sleep to 2, and
-#  removed the sleep statement from the below 'if' statement (before,
-#  the above sleep was 1, and the sleep in the 'if' statement was 2).
 rm -rf "${linkdir}"
 if [ -n "${tmp}" ]; then (rm -rf "${tmp}") & fi;
