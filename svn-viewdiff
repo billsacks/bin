@@ -147,8 +147,6 @@ while [ $# != 0 ]; do
   esac;
 done;
 
-echo "sleep $sleeptime"
-
 # WJS (1-13-11): Error checking: expect to have 2 labels
 if [ $labelnum != 2 ]; then
     usage "Expect two label arguments"
