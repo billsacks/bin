@@ -200,13 +200,19 @@ declare -i numups
 numups=0
 
 # repeatedly go up a level until we find a root that ends with "trunk_tags" or "branch_tags"
-until [[ `basename $root` = "trunk_tags" || `basename $root` = "branch_tags" || $root = '.' ]]; do
+until [[ `basename $root` = "trunk_tags" || `basename $root` = "branch_tags" ]]; do
     last_remainder=$cur_remainder
     cur_remainder="/${cur_base}${cur_remainder}"
     last_base=$cur_base
     cur_base=`basename $root`
     root=`dirname $root`
     numups=$numups+1
+
+    if [[ $root = '.' || $root = 'https:' ]]; then
+	echo "ERROR: URL does not appear to be a branch tag or trunk tag"
+	echo "URL: $source_url"
+	exit 1
+    fi
 
     # Error checking: make sure loop invariants are still satisfied:
     if [[ ${root}/${cur_base}${cur_remainder} != $source_url ]]; then
@@ -235,12 +241,6 @@ done
 # Also, cur_remainder gives the remainder of the path below cur_base,
 # and last_remainder gives the remainder of the path below last_base
 # (the remainders have leading slashes if they are not blank)
-
-if [ $root = '.' ]; then
-    echo "ERROR: URL does not appear to be a branch tag or trunk tag"
-    echo "URL: $source_url"
-    exit 1
-fi
 
 # Determine tag name of this URL based on whether this is a trunk tag
 # or a branch tag
