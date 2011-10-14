@@ -3,6 +3,8 @@
 # WJS (10-14-11): Original obtained from
 # http://soft.vub.ac.be/svn-gen/bdefrain/fmscripts/; see documentation
 # here: http://www.defraine.net/~brunod/fmdiff/
+#
+# Original was named fmresolve
 
 #
 # Wrapper script to use FileMerge to resolve Subversion conflicts
