@@ -106,24 +106,6 @@ function Usage {
     echo ""
 }
 
-# This function echoes the svn URL of the current directory.
-# If there is an error, the error string is echoed.
-function svn_url {
-    local my_url
-    
-    # Get the line containing the URL from svn info:
-    my_url=`svn info | grep "^URL: "`
-    if [ $? -ne 0 ]; then
-	echo "ERROR trying to obtain URL from svn info"
-	return 1
-    fi
-    
-    # get rid of the leading "URL: ", so we just have the URL itself
-    my_url=${my_url/URL: /}
-
-    echo $my_url
-}
-
 # ----------------------------------------------------------------------
 # BEGIN MAIN SCRIPT
 # ----------------------------------------------------------------------
@@ -175,7 +157,7 @@ fi
 if [ -z "$source_url" ]; then
     echo "Getting URL of current directory from svn:"
 
-    source_url=$(svn_url)
+    source_url=`svn_url`
     if [ $? -ne 0 ]; then
 	# for non-zero return value, source_url holds the error string
 	echo $source_url
@@ -394,7 +376,7 @@ echo ""
 # ----------------------------------------------------------------------
 
 if [ $switch -eq 1 ]; then
-    cur_url=$(svn_url)
+    cur_url=`svn_url`
     if [ $? -ne 0 ]; then
 	# for non-zero return value, cur_url holds the error string
 	echo $cur_url
