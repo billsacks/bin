@@ -4,6 +4,10 @@
 # Turn the dimension with name given by $1 into the record dimension
 # $2 is input file name, $3 is output file name
 
+# NOTE 10-25-11: It looks like this functionality has been added to
+# ncks, with the --mk_rec_dim option
+
+
 ncecat -O $2 $3  # Add degenerate record dimension named "record"
 ncpdq -O -a $1,record $3 $3  # Switch "record" and desired record dimension
 ncwa -O -a record $3 $3  # Average out degenerate "record"
