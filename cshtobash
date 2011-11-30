@@ -74,6 +74,7 @@ echo
 # Would be nice to deal with embedded newlines, e.g. in TERMCAP, but ...
 sed -e '/^SHLVL/d' \
     -e '/^PWD/d' \
+    -e '/^UID/d' \
     -e "s/'/'"\\\\"''"/g \
     -e "s/^\([A-Za-z0-9_]*=\)/export \1'/" \
     -e "s/$/'/" < /tmp/cb$$.e
