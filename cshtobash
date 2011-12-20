@@ -45,10 +45,15 @@ mkalias ()
         case $2 in
         '')     echo alias ${1}="''" ;;
         *[#\!]*)
-                comm=$(echo $2 | sed  's/\!\*/"$\@"/g
-                                       s/\!:\([1-9]\)/"$\1"/g
-                                       s/#/\#/g')
-                echo $1 \(\) "{" command "$comm"  "; }"
+# WJS (12-20-11): the following doesn't work in all cases, so I'm removing it
+# for example, it doesn't work for the following tcsh alias:
+# module	(set _prompt="$prompt";set prompt="";eval `/usr/bin/modulecmd tcsh !*`; set _exit=$status; set prompt="$_prompt";unset _prompt;; test 0 = $_exit;)
+# For this it generates the following, which doesn't work in bash, since bash doesn't have a 'set':
+# module () { command (set _prompt="$PS1";set prompt="";eval `/usr/bin/modulecmd tcsh "$@"`; set _exit=$status; set prompt="$_prompt";unset _prompt;; test 0 = $_exit;) ; }
+                # comm=$(echo $2 | sed  's/\!\*/"$\@"/g
+                #                        s/\!:\([1-9]\)/"$\1"/g
+                #                        s/#/\#/g')
+                # echo $1 \(\) "{" command "$comm"  "; }"
                 ;;
         *)      echo alias ${1}=\'$(echo "${2}" | sed "s:':'\\\\'':")\' ;;
         esac
