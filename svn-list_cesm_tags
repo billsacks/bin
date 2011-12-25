@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# List all tags in the tag directory corresponding to the current
+# trunk or branches directory
+

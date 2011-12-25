@@ -1,0 +1,63 @@
+#!/bin/bash
+
+# Navigate until we get to .../trunk or .../branches -- if the latter,
+# keep track of the last thing discarded, which is the branch name
+# (DO THIS IN A FUNCTION, WHICH WILL BE SHARED WITH
+# SVN-LIST_CESM_TAGS; note: a function can return a value with echo;
+# see example 36-17 here
+# <http://tldp.org/LDP/abs/html/assortedtips.html#MULTIPLICATION> for
+# a trick to return multiple values  -- with this, can return the path
+# .../trunk or .../branches, and the branch name if applicable; or,
+# maybe more useful: return (1) the path .../trunk or
+# .../branches/branch_name, and (2) the path of the corresponding tags
+# directory, .../trunk_tags or .../branch_tags/branch_name_tags)
+# UPDATE: a little script may be more appropriate than a function
+
+# Determine the latest tag with:
+# tst=`svn log -v https://svn-ccsm-models.cgd.ucar.edu/clm2/branch_tags/landice_diagnostics_tags/ | head -4 | tail -1`
+# This will give something like: 
+# A /clm2/branch_tags/landice_diagnostics_tags/landice_diagnostics_14_non2dgrid18_clm4_0_26 (from /clm2/branches/landice_diagnostics:31302)
+# Then can extract (1) the tag name (as `basename $col2`) and (2) the
+# revision number from which it was copied (by getting the number
+# after the colon)
+
+# Find latest tag in corresponding tags directory
+# Can do this with:
+# tst2=`echo $tst | awk '{print $2}'
+# lasttag=`basename $tst2`
+# OLD IDEA:
+# Remove leading "A"
+# tst2=${tst/A/}
+# Remove trailing "(from...":
+# tst3=${tst2%(from*}
+# Get the tag name:
+# lasttag=`basename $tst3`
+# OLD NOTES: (look for a script to find the most recent tag;
+# otherwise, use svn ls and take the last thing listed, assuming that
+# the ordering makes sense [problem: what if we go from two digits to
+# three? 100 would be listed near 10, not after 99...])
+
+# Determine revision on which this latest tag was based
+# Can do this with:
+# Remove everything to the left of the colon:
+# tst2=${tst#*:}
+# Remove the ending ')':
+# tst3=${tst2%)}
+# OLD NOTES:  (is there an
+# svn script to do this?)
+
+# do an svn log from that revision to the head of the appropriate
+# trunk / branch, so user can see the revisions included in this tag
+
+# Parse the tag name to get the tag # (look for _<number>+_ -- maybe
+# use sed to strip the rest out), then add 1
+# Can do:
+# (note that .*? is non-greedy search in perl -- so find the first instance of
+# _ followed by one or more digits, then _)
+# tagnum=`echo $lasttag | perl -pe 's/.*?_(\d+)_.*/\1/'`
+# let newtagnum=tagnum+1
+# newtagnum=`printf "%02d" $newtagnum`
+
+# Create a new tag
+# Can do:
+# newtag=`echo $lasttag | sed -e "s/_${tagnum}_/_${newtagnum}_/"`
