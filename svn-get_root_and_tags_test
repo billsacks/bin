@@ -1,0 +1,133 @@
+#!/bin/bash
+
+# Bill Sacks
+# 12-29-11
+
+# This script tests the svn-get_root_and_tags script
+
+testURLNotWithinTrunkOrBranch() {
+    url=${svnroot}/some/weird/place
+    tst=$($cmd $url)
+    assertFalse 'expecting error return code' $?
+}
+
+testShortURLNotWithinTrunkOrBranch() {
+    url=https://svn-ccsm-models.cgd.ucar.edu
+    tst=$($cmd $url)
+    assertFalse 'expecting error return code' $?
+}
+
+testURLIsTrunk() {
+    url=${svnroot}/trunk
+    url_tags=${svnroot}/trunk_tags
+    tst=$($cmd $url)
+    th_assertTrueWithCorrectOutput $? "$url $url_tags" "${tst}"
+}
+
+testURLIsBranches() {
+    url=${svnroot}/branches
+    tst=$($cmd $url)
+    assertFalse 'expecting error return code' $?
+}
+
+testURLIsSomeBranch() {
+    url=${svnroot}/branches/SomeBranch
+    url_tags=${svnroot}/branch_tags/SomeBranch_tags
+    tst=$($cmd $url)
+    th_assertTrueWithCorrectOutput $? "$url $url_tags" "${tst}"
+}
+
+testURLIsTrunkTags() {
+    url=${svnroot}/trunk_tags
+    url_main=${svnroot}/trunk
+    tst=$($cmd $url)
+    th_assertTrueWithCorrectOutput $? "$url_main $url" "${tst}"
+}
+
+testURLIsBranchTags() {
+    url=${svnroot}/branch_tags
+    tst=$($cmd $url)
+    assertFalse 'expecting error return code' $?
+}
+
+testURLIsSomeBranchTags() {
+    url=${svnroot}/branch_tags/SomeBranch_tags
+    url_main=${svnroot}/branches/SomeBranch
+    tst=$($cmd $url)
+    th_assertTrueWithCorrectOutput $? "$url_main $url" "${tst}"
+}
+
+testURLWithinTrunk() {
+    url=${svnroot}/trunk/models/lnd/clm2/src
+    url_main=${svnroot}/trunk
+    url_tags=${svnroot}/trunk_tags
+    tst=$($cmd $url)
+    th_assertTrueWithCorrectOutput $? "$url_main $url_tags" "${tst}"
+}
+
+testURLWithinSomeBranch() {
+    url=${svnroot}/branches/SomeBranch/models
+    url_main=${svnroot}/branches/SomeBranch
+    url_tags=${svnroot}/branch_tags/SomeBranch_tags
+    tst=$($cmd $url)
+    th_assertTrueWithCorrectOutput $? "$url_main $url_tags" "${tst}"
+}
+
+testURLIsATrunkTag() {
+    url=${svnroot}/trunk_tags/clm4_0_37
+    url_main=${svnroot}/trunk
+    url_tags=${svnroot}/trunk_tags
+    tst=$($cmd $url)
+    th_assertTrueWithCorrectOutput $? "$url_main $url_tags" "${tst}"
+}
+
+testURLIsABranchTag() {
+    url=${svnroot}/branch_tags/SomeBranch_tags/SomeBranch_01_clm4_0_37
+    url_main=${svnroot}/branches/SomeBranch
+    url_tags=${svnroot}/branch_tags/SomeBranch_tags
+    tst=$($cmd $url)
+    th_assertTrueWithCorrectOutput $? "$url_main $url_tags" "${tst}"
+}
+
+
+testURLWithinTrunkTag() {
+    url=${svnroot}/trunk_tags/clm4_0_37/models
+    url_main=${svnroot}/trunk
+    url_tags=${svnroot}/trunk_tags
+    tst=$($cmd $url)
+    th_assertTrueWithCorrectOutput $? "$url_main $url_tags" "${tst}"
+}
+
+testURLWithinBranchTag() {
+    url=${svnroot}/branch_tags/SomeBranch_tags/SomeBranch_01_clm4_0_37/models/lnd/clm/src
+    url_main=${svnroot}/branches/SomeBranch
+    url_tags=${svnroot}/branch_tags/SomeBranch_tags
+    tst=$($cmd $url)
+    th_assertTrueWithCorrectOutput $? "$url_main $url_tags" "${tst}"
+}
+
+#-----------------------------------------------------------------------------
+# suite functions
+#-----------------------------------------------------------------------------
+
+# th_assertTrueWithCorrectOutput(retval, expectedOutput, output)
+th_assertTrueWithCorrectOutput() {
+    retval=$1
+    expectedOutput=$2
+    output=$3
+
+    assertTrue "expecting return code of 0" $retval || return
+    assertEquals "incorrect output" "$expectedOutput" "$output" || return
+}
+    
+
+
+
+oneTimeSetUp() {
+    cmd='svn-get_root_and_tags'
+    svnroot=https://svn-ccsm-models.cgd.ucar.edu/clm2
+}
+
+
+# load and run shUnit2
+. ${HOME}/shunit2/src/shunit2

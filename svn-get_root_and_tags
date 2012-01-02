@@ -1,0 +1,98 @@
+#!/bin/bash
+
+# Bill Sacks
+# 12-25-11
+
+# Given an svn url that sits somewhere under a trunk, trunk_tags,
+# branches or branch_tags directory, return the url of either (a) the
+# trunk and trunk_tags directories (if the specified url is that of
+# the trunk or trunk_tags), or (b) the branches and branch_tags
+# directories corresponding to this branch (if the specified url is
+# that of a branch or branch tag)
+#
+# (assumes the CESM svn layout, in which trunk, trunk_tags, branches
+# and branch_tags are all siblings)
+#
+# Note 12-25-11: this script has some commonality with part of
+# svn-make_cesm_branch
+# 
+# Usage: svn-get_root_and_tags URL
+#
+# Returns two space-delimited strings: either:
+# (a) trunk_url trunk_tags_url
+# or
+# (b) branch_url branch_tags_url
+
+# ----------------------------------------------------------------------
+# LOCAL FUNCTIONS DEFINED HERE
+# ----------------------------------------------------------------------
+
+function Usage {
+    progname=`basename $0`
+    echo "Usage: $progname URL"
+}
+
+# ----------------------------------------------------------------------
+# BEGIN MAIN SCRIPT
+# ----------------------------------------------------------------------
+
+if [[ $# -ne 1 ]]; then
+    Usage
+    exit 1
+fi
+
+url=$1
+
+root=$url
+cur_base=''
+root_base=`basename $root`
+until [[ $root_base = "trunk" || $root_base = "trunk_tags" ||
+	$root_base = "branches" || $root_base = "branch_tags" ]]; do
+    cur_base=$root_base
+    root=`dirname $root`
+    root_base=`basename $root`
+
+    if [[ $root = '.' || $root = 'https:' ]]; then
+	echo "ERROR: URL is not within one of trunk / trunk_tags / branches / branch_tags"
+	echo "URL: $url"
+	exit 1
+    fi
+done
+
+# Now root_base is one of 'trunk', 'trunk_tags', 'branches' or
+# 'branch_tags'; root gives the url up to and including root_base;
+# cur_base gives the name of the directory one level down from root in
+# the given url. (cur_base is only important if the URL is that of a
+# branch or branch tag; in this case, cur_base is used to tell us the
+# branch name of the URL.)
+
+if [[ ($root_base = "branches" || $root_base = "branch_tags") &&
+      -z $cur_base ]]; then
+    echo "ERROR: URL appears to be that of the main branches or branch_tags directory"
+    echo "For this  script to work, the URL should be that of a specific branch or branch tag"
+    echo "URL: $url"
+    exit 1
+fi
+
+root_dir=`dirname $root`
+
+if [[ $root_base = "trunk" ]]; then
+    url_main=$root
+    url_tags="${root_dir}/trunk_tags"
+
+elif [[ $root_base = "trunk_tags" ]]; then
+    url_main="${root_dir}/trunk"
+    url_tags=$root
+
+elif [[ $root_base = "branches" ]]; then
+    url_main="${root}/${cur_base}"
+    url_tags="${root_dir}/branch_tags/${cur_base}_tags"
+
+elif [[ $root_base = "branch_tags" ]]; then
+    cur_base_main=${cur_base%_tags}  # remove the trailing "_tags"
+    url_main="${root_dir}/branches/${cur_base_main}"
+    url_tags="${root}/${cur_base}"
+
+fi
+
+echo "$url_main $url_tags"
