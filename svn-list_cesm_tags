@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Bill Sacks
+# 1-3-11
+
 # List all tags in the tag directory corresponding to the current
 # URL. If the current URL is within the trunk or a branch, then it
 # lists the tags in the corresponding trunk_tags or branch_tags
