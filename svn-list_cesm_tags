@@ -66,7 +66,7 @@ if [[ -z "$source_url" ]]; then
     source_url=`svn-url`
     if [ $? -ne 0 ]; then
 	# for non-zero return value, source_url holds the error string
-	echo $source_url
+	echo "$source_url"
 	exit 1
     fi
 fi
@@ -76,6 +76,13 @@ fi
 # ----------------------------------------------------------------------
 
 main_and_tags=`svn-get_root_urls $source_url`
+
+if [[ $? -ne 0 ]]; then
+    # for non-zero return value, main_and_tags holds the error string
+    echo "$main_and_tags"
+    exit 1
+fi
+
 tags=`echo $main_and_tags | awk '{print $2}'`
 
 svn ls $tags
