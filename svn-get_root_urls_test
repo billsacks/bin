@@ -124,7 +124,7 @@ th_assertTrueWithCorrectOutput() {
 
 
 oneTimeSetUp() {
-    cmd='svn-get_root_and_tags'
+    cmd='svn-get_root_urls'
     svnroot=https://svn-ccsm-models.cgd.ucar.edu/clm2
 }
 

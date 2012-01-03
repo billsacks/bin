@@ -16,7 +16,7 @@
 # Note 12-25-11: this script has some commonality with part of
 # svn-make_cesm_branch
 # 
-# Usage: svn-get_root_and_tags URL
+# Usage: svn-get_root_urls URL
 #
 # Returns two space-delimited strings: either:
 # (a) trunk_url trunk_tags_url
