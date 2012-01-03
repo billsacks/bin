@@ -157,7 +157,7 @@ fi
 if [ -z "$source_url" ]; then
     echo "Getting URL of current directory from svn:"
 
-    source_url=`svn_url`
+    source_url=`svn-url`
     if [ $? -ne 0 ]; then
 	# for non-zero return value, source_url holds the error string
 	echo $source_url
@@ -171,6 +171,7 @@ fi
 # ----------------------------------------------------------------------
 # Get name of the tag for this URL, and determine root for 'branches' and 'branch_tags' directories
 # ----------------------------------------------------------------------
+# NOTE 12-25-11: The following has some commonality with svn-get_root_and_tags
 
 cur_base=`basename $source_url`
 last_base=''
@@ -376,7 +377,7 @@ echo ""
 # ----------------------------------------------------------------------
 
 if [ $switch -eq 1 ]; then
-    cur_url=`svn_url`
+    cur_url=`svn-url`
     if [ $? -ne 0 ]; then
 	# for non-zero return value, cur_url holds the error string
 	echo $cur_url
