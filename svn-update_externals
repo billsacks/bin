@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# Update the svn:externals property based on an
+# SVN_EXTERNAL_DIRECTORIES file
+
+svn propset svn:externals -F SVN_EXTERNAL_DIRECTORIES .
