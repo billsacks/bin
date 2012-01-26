@@ -6,6 +6,8 @@
 
 # Intended usage: svn status | ignore_unversioned
 
+# 1-26-12: I could probably have done this with a 'grep -v ...'
+
 while (<>) {
   if (!($_ =~ /^\s*\?/)) {
     print $_;
