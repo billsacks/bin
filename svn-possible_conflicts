@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# Bill Sacks
+# 2-23-12
+
+# This script shows all files that have changed in both of two svn paths, relative to a common ancestor
+# This is useful to see potential merge conflicts. 
+# For example, if we have a branch tag https://svn-ccsm-models.cgd.ucar.edu/clm2/branch_tags/dynlu_tags/dynlu04_clm4_0_37 (up to date with clm4_0_37),
+# and we want to merge it up to clm4_0_40, then we could do:
+# svn-possible_conflicts https://svn-ccsm-models.cgd.ucar.edu/clm2/trunk_tags/clm4_0_37 https://svn-ccsm-models.cgd.ucar.edu/clm2/trunk_tags/clm4_0_40 https://svn-ccsm-models.cgd.ucar.edu/clm2/branch_tags/dynlu_tags/dynlu04_clm4_0_37
+
+# Adapted from
+# http://stackoverflow.com/questions/4448500/in-subversion-list-files-that-have-changed-on-the-trunk-but-not-on-a-branch-and
+
+if [ $# -ne 3 ]; then
+    echo "Usage: svn-possible_conflicts ancestor_path path1 path2"
+    echo "where ancestor is the svn path of a common ancestor,"
+    echo "and path1 and path2 are the svn paths that you want to compare"
+    exit 1
+fi
+
+ancestor_path=$1
+path1=$2
+path2=$3
+
+# TODO: It may be worth filtering out the change lists to only include
+# files that had real changes... I think that means they have some
+# character in the first column (but I should confirm that using 'svn
+# stat help')... however that *may* mean that some things are excluded
+# that shouldn't be
+
+# getting the changed file list in path1
+# the sed part removes the status columns, which might cause uniq to fail identifying equal files
+svn diff --summarize $ancestor_path $path1 | sed -e 's/.......//' > changes-path1.$$
+
+# getting the changed file list in path2
+svn diff --summarize $ancestor_path $path2 | sed -e 's/.......//' > changes-path2.$$
+
+# display the files which changed in both paths
+sort changes-path1.$$ changes-path2.$$ | uniq -d
+
+rm changes-path1.$$ changes-path2.$$
