@@ -83,6 +83,17 @@ if [[ $? -ne 0 ]]; then
     exit 1
 fi
 
-tags=`echo $main_and_tags | awk '{print $2}'`
+tags_dir=`echo $main_and_tags | awk '{print $2}'`
 
-svn ls $tags
+# Print the tags directory before and after the tags themselves, for
+# easy copying & pasting:
+echo $tags_dir
+svn ls -v $tags_dir
+echo $tags_dir
+
+# Another option would be the following: Prints the full tags
+# including path, but not the verbose info:
+# tags=`svn ls $tags_dir`
+# for tag in $tags; do
+#     echo "${tags_dir}/${tag}"
+# done
