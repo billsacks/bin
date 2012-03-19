@@ -1,0 +1,82 @@
+#!/bin/bash
+
+# Bill Sacks
+# 3-19-12
+
+# Script to mount a volume via sshfs
+
+# ----------------------------------------------------------------------
+# SOURCE EXTERNAL FUNCTIONS
+# ----------------------------------------------------------------------
+
+# Note that the following must be in your path, or the current directory
+
+source do_cmd.bash
+
+# ----------------------------------------------------------------------
+# LOCAL FUNCTIONS DEFINED HERE
+# ----------------------------------------------------------------------
+
+function Usage {
+    progname=`basename $0`
+    echo "Usage: $progname [-h] [-l link_point] [-u user_name] machname remote_location mount_point volname"
+    echo ""
+    echo "Mounts a volume via sshfs, where:"
+    echo "  machname gives the name of the machine to connect to"
+    echo "  remote_location gives the path on the remote machine"
+    echo "  mount_point gives the path on the local machine at which to mount the drive"
+    echo "  volname gives the short name of the drive"
+    echo ""
+    echo "The following are optional arguments:"
+    echo "[-h]: Print this help message and exit"
+    echo "[-l link_point]: Make a symbolic link ot link_point pointing to the mount_point"
+    echo "[-u user_name]: Connect with the given user (defaults to ${user_name})"
+    echo ""
+    echo "Example: $progname -l '/Volumes/ptmp' 'bluefire.ucar.edu' '/ptmp/sacks' '/Volumes/bluefire/ptmp/sacks' ptmp"
+    echo ""
+}
+
+# ----------------------------------------------------------------------
+# BEGIN MAIN SCRIPT
+# ----------------------------------------------------------------------
+
+# ----------------------------------------------------------------------
+# Handle command-line arguments
+# ----------------------------------------------------------------------
+
+# define default values:
+
+link_point=""
+user_name=sacks
+
+while getopts hl:u: opt; do
+    case $opt in
+	h) Usage; exit;;
+	l) link_point=$OPTARG;;
+	u) user_name=$OPTARG;;
+	\?) Usage; exit 1
+    esac
+done
+
+# shift off the arguments we read with getopts:
+shift `expr $OPTIND - 1`
+
+if [[ $# -ne 4 ]]; then
+    Usage
+    exit 1
+fi
+    
+machname=$1
+remote_location=$2
+mount_point=$3
+volname=$4
+
+mkdir -p $mount_point
+do_cmd "sshfs ${user_name}@${machname}:${remote_location} $mount_point -oauto_cache,volname=$volname" 0
+# NOTE: Until 11-9-10, also had reconnect option, but I think this was raising some flags at CISL, so I turned it off
+
+if [ -n "$link_point" ]; then  # if link_point was provided
+    if [ ! -e $link_point ]; then  # if the link doesn't already exist
+	ln -s $mount_point $link_point
+    fi
+fi
