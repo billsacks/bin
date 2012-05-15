@@ -202,9 +202,8 @@ file2="${linkdir}/right/${dir}/${prefix}${base}"
 
 #
 # If opendiff isn't installed, you can't launch FileMerge.
-# If we're not in the OS X Terminal, we probably can't run FileMerge
 #
-if ! type opendiff >& /dev/null || [ "${TERM_PROGRAM:=}" != "Apple_Terminal" ]; then
+if ! type opendiff >& /dev/null; then
     diff "$@";
     exit $?;
 fi;
