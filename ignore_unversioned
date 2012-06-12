@@ -9,7 +9,7 @@
 # 1-26-12: I could probably have done this with a 'grep -v ...'
 
 while (<>) {
-  if (!($_ =~ /^\s*\?/)) {
+  if (!($_ =~ /^\s*\?|X/)) {
     print $_;
   }
 }
