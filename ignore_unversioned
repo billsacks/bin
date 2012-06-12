@@ -1,13 +1,15 @@
 #!/usr/bin/perl
 
 # Meant to take as input the output from svn status
-# Only prints lines that do NOT begin with ? or X
-#  - i.e., ignore unversioned items (and externals)
+# Only prints lines that do NOT begin with ? (or ? after some number of spaces)
+#  - i.e., ignore unversioned items
 
 # Intended usage: svn status | ignore_unversioned
 
+# 1-26-12: I could probably have done this with a 'grep -v ...'
+
 while (<>) {
-  if (!($_ =~ /^(\?|X)/)) {
+  if (!($_ =~ /^\s*\?|X/)) {
     print $_;
   }
 }
