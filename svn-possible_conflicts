@@ -30,13 +30,22 @@ path2=$3
 # that shouldn't be
 
 # getting the changed file list in path1
-# the sed part removes the status columns, which might cause uniq to fail identifying equal files
-svn diff --summarize $ancestor_path $path1 | sed -e 's/.......//' > changes-path1.$$
+svn diff --summarize $ancestor_path $path1 > changes-path1.full.$$
+echo "--- CHANGES IN PATH 1 ---"
+cat changes-path1.full.$$
+echo ""
+# this sed command removes the status columns, which might cause uniq to fail identifying equal files
+sed -e 's/.......//' changes-path1.full.$$ > changes-path1.$$
 
 # getting the changed file list in path2
-svn diff --summarize $ancestor_path $path2 | sed -e 's/.......//' > changes-path2.$$
+svn diff --summarize $ancestor_path $path2 > changes-path2.full.$$
+echo "--- CHANGES IN PATH 2 ---"
+cat changes-path2.full.$$
+echo ""
+sed -e 's/.......//' changes-path2.full.$$ > changes-path2.$$
 
 # display the files which changed in both paths
+echo "--- POSSIBLE CONFLICTS ---"
 sort changes-path1.$$ changes-path2.$$ | uniq -d
 
-rm changes-path1.$$ changes-path2.$$
+rm changes-path1.full.$$ changes-path2.full.$$ changes-path1.$$ changes-path2.$$
