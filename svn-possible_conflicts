@@ -36,6 +36,10 @@ cat changes-path1.full.$$
 echo ""
 # this sed command removes the status columns, which might cause uniq to fail identifying equal files
 sed -e 's/.......//' changes-path1.full.$$ > changes-path1.$$
+# find lines that do not have a space in the first column
+# (this generally indicates changes to the file contents)
+grep '^[^ ]' changes-path1.full.$$ > changes-path1.full.contentChange.$$
+sed -e 's/.......//' changes-path1.full.contentChange.$$ > changes-path1.contentChange.$$
 
 # getting the changed file list in path2
 svn diff --summarize $ancestor_path $path2 > changes-path2.full.$$
@@ -43,9 +47,16 @@ echo "--- CHANGES IN PATH 2 ---"
 cat changes-path2.full.$$
 echo ""
 sed -e 's/.......//' changes-path2.full.$$ > changes-path2.$$
+grep '^[^ ]' changes-path2.full.$$ > changes-path2.full.contentChange.$$
+sed -e 's/.......//' changes-path2.full.contentChange.$$ > changes-path2.contentChange.$$
 
 # display the files which changed in both paths
 echo "--- POSSIBLE CONFLICTS ---"
 sort changes-path1.$$ changes-path2.$$ | uniq -d
+echo ""
+echo "--- POSSIBLE CONFLICTS: STATUS CHARACTER IN FIRST COLUMN IN BOTH PATHS ---"
+sort changes-path1.contentChange.$$ changes-path2.contentChange.$$ | uniq -d
+
 
 rm changes-path1.full.$$ changes-path2.full.$$ changes-path1.$$ changes-path2.$$
+rm changes-path1.full.contentChange.$$ changes-path2.full.contentChange.$$ changes-path1.contentChange.$$ changes-path2.contentChange.$$
