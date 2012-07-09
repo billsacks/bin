@@ -23,12 +23,6 @@ ancestor_path=$1
 path1=$2
 path2=$3
 
-# TODO: It may be worth filtering out the change lists to only include
-# files that had real changes... I think that means they have some
-# character in the first column (but I should confirm that using 'svn
-# stat help')... however that *may* mean that some things are excluded
-# that shouldn't be
-
 # getting the changed file list in path1
 svn diff --summarize $ancestor_path $path1 > changes-path1.full.$$
 echo "--- CHANGES IN PATH 1 ---"
