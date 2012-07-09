@@ -12,6 +12,9 @@
 # Adapted from
 # http://stackoverflow.com/questions/4448500/in-subversion-list-files-that-have-changed-on-the-trunk-but-not-on-a-branch-and
 
+# 7-9-12: Could I get similar or more accurate results by doing svn
+# merge --dry-run and looking for 'G' and 'C'???
+
 if [ $# -ne 3 ]; then
     echo "Usage: svn-possible_conflicts ancestor_path path1 path2"
     echo "where ancestor is the svn path of a common ancestor,"
