@@ -31,22 +31,6 @@
 # revision number from which it was copied (by getting the number
 # after the colon)
 
-# Find latest tag in corresponding tags directory
-# Can do this with:
-# tst2=`echo $tst | awk '{print $2}'
-# lasttag=`basename $tst2`
-# OLD IDEA:
-# Remove leading "A"
-# tst2=${tst/A/}
-# Remove trailing "(from...":
-# tst3=${tst2%(from*}
-# Get the tag name:
-# lasttag=`basename $tst3`
-# OLD NOTES: (look for a script to find the most recent tag;
-# otherwise, use svn ls and take the last thing listed, assuming that
-# the ordering makes sense [problem: what if we go from two digits to
-# three? 100 would be listed near 10, not after 99...])
-
 # Determine revision on which this latest tag was based
 # Can do this with:
 # Remove everything to the left of the colon:
