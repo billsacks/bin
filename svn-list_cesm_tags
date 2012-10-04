@@ -75,7 +75,7 @@ fi
 # Get directory of tags corresponding to this URL
 # ----------------------------------------------------------------------
 
-main_and_tags=`svn-get_root_urls $source_url`
+main_and_tags=`svn-get_root_urls -u $source_url`
 
 if [[ $? -ne 0 ]]; then
     # for non-zero return value, main_and_tags holds the error string
