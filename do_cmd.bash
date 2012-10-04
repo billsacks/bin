@@ -13,8 +13,8 @@ function do_cmd {
 	return 1
     fi
 
-    cmd=$1
-    dryrun=$2
+    local cmd=$1
+    local dryrun=$2
 
     echo $cmd
     if [ $dryrun -eq 0 ]; then

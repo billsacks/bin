@@ -6,42 +6,264 @@
 # This script makes a new tag following the CESM tagging
 # convention. The tag is a copy of the trunk or branch associated with
 # the current URL, unless another URL is specified. The tag is placed
-# in the associated trunk_tags or branch_tags directory. The tag name
-# is determined by finding the most recent tag, and incrementing the
-# tag number by one.
+# in the associated trunk_tags or branch_tags directory.
 
-# Navigate until we get to .../trunk or .../branches -- if the latter,
-# keep track of the last thing discarded, which is the branch name
-# (DO THIS IN A FUNCTION, WHICH WILL BE SHARED WITH
-# SVN-LIST_CESM_TAGS; note: a function can return a value with echo;
-# see example 36-17 here
-# <http://tldp.org/LDP/abs/html/assortedtips.html#MULTIPLICATION> for
-# a trick to return multiple values  -- with this, can return the path
-# .../trunk or .../branches, and the branch name if applicable; or,
-# maybe more useful: return (1) the path .../trunk or
-# .../branches/branch_name, and (2) the path of the corresponding tags
-# directory, .../trunk_tags or .../branch_tags/branch_name_tags)
-# UPDATE: a little script may be more appropriate than a function
+# ----------------------------------------------------------------------
+# SOURCE EXTERNAL FUNCTIONS
+# ----------------------------------------------------------------------
 
-# Determine the latest tag with:
-# tst=`svn log -v https://svn-ccsm-models.cgd.ucar.edu/clm2/branch_tags/landice_diagnostics_tags/ | head -4 | tail -1`
-# This will give something like: 
-# A /clm2/branch_tags/landice_diagnostics_tags/landice_diagnostics_14_non2dgrid18_clm4_0_26 (from /clm2/branches/landice_diagnostics:31302)
-# Then can extract (1) the tag name (as `basename $col2`) and (2) the
-# revision number from which it was copied (by getting the number
-# after the colon)
+# Note that the following must be in your path, or the current directory
 
-# Determine revision on which this latest tag was based
-# Can do this with:
-# Remove everything to the left of the colon:
-# tst2=${tst#*:}
-# Remove the ending ')':
-# tst3=${tst2%)}
-# OLD NOTES:  (is there an
-# svn script to do this?)
+source do_cmd.bash
 
-# do an svn log from that revision to the head of the appropriate
-# trunk / branch, so user can see the revisions included in this tag
+# ----------------------------------------------------------------------
+# LOCAL FUNCTIONS DEFINED HERE
+# ----------------------------------------------------------------------
+
+function Usage {
+    progname=`basename $0`
+    echo "Usage: $progname [-d] [-h] [-m message] [-F logfile] [-u url] tag_name"
+    echo ""
+    echo "This script makes a new tag following the CESM tagging convention."
+    echo "The tag is a copy of the trunk or branch associated with the current URL,"
+    echo "or another URL if specified. The tag is placed in the associated trunk_tags"
+    echo "or branch_tags directory."
+    echo ""
+    echo "tag_name is the name of the new tag (do NOT include full URL)"
+    echo ""
+    echo "The URLs of the trunk/trunk_tags, or branch/branch_tags directories"
+    echo "are obtained based on the -u url option, if given; otherwise, they"
+    echo "are retrieved based on the URL of the current directory."
+    echo "For example, the URL can be of the form:"
+    echo "  https://svn-ccsm-models.cgd.ucar.edu/drv/seq_mct/trunk_tags/drvseq3_1_51"
+    echo "Or:"
+    echo "  https://svn-ccsm-models.cgd.ucar.edu/drv/seq_mct/branch_tags/iens_neon_tags/iens_neon_03_drvseq3_1_47"
+    echo "It can also have additional directories below the tag, as in:"
+    echo "  https://svn-ccsm-models.cgd.ucar.edu/clm2/trunk_tags/clm4_0_20/models/lnd/clm"
+    echo "The above is treated identically to:"
+    echo "  https://svn-ccsm-models.cgd.ucar.edu/clm2/trunk_tags/clm4_0_20"
+    echo ""
+    echo "The following are optional arguments:"
+    echo "[-d]: Do a dry run: echo svn commands that would be done,"
+    echo "      but don't execute them."
+    echo ""
+    echo "[-h]: Print this help message and exit"
+    echo ""
+    echo "[-m message]: log message to use for the copy"
+    echo "              Either this or -F logfile MUST be specified"
+    echo ""
+    echo "[-F logfile]: log file to use for the copy"
+    echo "              Either this or -m message MUST be specified"
+    echo ""
+    echo "[-u URL]: Use the specified URL to find the appropriate trunk/trunk_tags"
+    echo "          or branch/branch_tags directories"
+    echo "          (If not given, uses the URL of the current directory)"
+    echo ""
+}
+
+# ----------------------------------------------------------------------
+# BEGIN MAIN SCRIPT
+# ----------------------------------------------------------------------
+
+# ----------------------------------------------------------------------
+# Handle command-line arguments
+# ----------------------------------------------------------------------
+
+# define default values:
+dryrun=0
+message=""
+logfile=""
+url=""
+
+while getopts dhm:F:u: opt; do
+    case $opt in
+	d) dryrun=1;;
+	h) Usage; exit;;
+	m) message=$OPTARG;;
+	F) logfile=$OPTARG;;
+	u) url=$OPTARG;;
+	\?) Usage; exit 1
+    esac
+done
+
+# shift off the arguments we read with getopts:
+shift `expr $OPTIND - 1`
+
+if [[ $# -ne 1 ]]; then
+    Usage
+    exit 1
+fi
+
+tag_name=$1
+
+# ----------------------------------------------------------------------
+# Error check arguments
+# ----------------------------------------------------------------------
+
+# Make sure tag name doesn't contain any non-word characters:
+# The grep will return 0 if a non-word character is found, 1 if not:
+echo "$tag_name" | grep '\W' > /dev/null
+nonword=$?
+if [ $nonword -eq 0 ]; then
+    echo "ERROR: tag name cannot contain non-word characters"
+    echo "tag specified: <${tag_name}>"
+    exit 1
+fi
+
+# Make sure exactly one of -m or -F is given
+if [[ -z "$message" && -z "$logfile" ]]; then
+    echo "must give -m message or -F logfile arguments"
+    exit 1
+fi
+
+if [[ -n "$message" && -n "$logfile" ]]; then
+    echo "can only give one of -m message or -F logfile arguments"
+    exit 1
+fi
+
+# ----------------------------------------------------------------------
+# If URL isn't specified, get current URL from svn
+# ----------------------------------------------------------------------
+
+if [ -z "$url" ]; then
+    echo "Getting URL of current directory from svn:"
+
+    url=`svn-url`
+    if [ $? -ne 0 ]; then
+	# for non-zero return value, url holds the error string
+	echo $url
+	exit 1
+    fi
+
+    echo $url
+    echo ""
+fi
+
+# ----------------------------------------------------------------------
+# Get directories of trunk/trunk_tags or branch/branch_tags corresponding to given url
+# ----------------------------------------------------------------------
+
+main_and_tags=`svn-get_root_urls -u $url`
+main_url=`echo $main_and_tags | awk '{print $1}'`
+tags_url=`echo $main_and_tags | awk '{print $2}'`
+
+new_tag_url=$tags_url/$tag_name
+
+# ----------------------------------------------------------------------
+# Make sure desired tag doesn't already exist
+# ----------------------------------------------------------------------
+
+echo "Making sure desired tag doesn't already exist..."
+result=`svn ls $new_tag_url 2>/dev/null`
+if [ -z $? ]; then
+    echo "ERROR: desired tag URL already exists!"
+    echo "$new_tag_url"
+    exit 1
+else
+    echo "Good."
+fi
+echo ""
+
+# ----------------------------------------------------------------------
+# Determine the latest tag and revision on which it was based
+# ----------------------------------------------------------------------
+
+# The following gets two lines: first contains tag & revision from which it was made;
+# second gets some additional info
+latest_tag_info_full=`svn-latest_tag -t $tags_url -r`
+
+# Now extract the pieces:
+latest_tag_info_main=`echo "$latest_tag_info_full" | head -1`
+latest_tag_url=`echo $latest_tag_info_main | awk '{print $1}'`
+from_revision=`echo $latest_tag_info_main | awk '{print $2}'`
+let from_revision_p1=from_revision+1
+latest_tag_info_extra=`echo "$latest_tag_info_full" | tail -1`
+
+# ----------------------------------------------------------------------
+# Do an svn log from the revision on which the latest tag was based
+# to the head of the appropriate trunk / branch, so user can see the
+# revisions included in this tag
+# ----------------------------------------------------------------------
+
+echo "Last tag was:"
+echo "$latest_tag_url"
+echo "$latest_tag_info_extra"
+echo ""
+echo "Changes since last tag:"
+echo ""
+echo ""
+
+do_cmd "svn log -r ${from_revision_p1}:HEAD -v $main_url" 0
+
+echo ""
+echo ""
+
+# ----------------------------------------------------------------------
+# Build up command
+# ----------------------------------------------------------------------
+
+cmd="svn cp $main_url $new_tag_url"
+if [ -n "$message" ]; then
+    cmd="$cmd -m '$message'"
+fi
+
+if [ -n "$logfile" ]; then
+    cmd="$cmd -F $logfile"
+fi
+
+# ----------------------------------------------------------------------
+# Confirm planned changes with user, abort if user does not confirm
+# ----------------------------------------------------------------------
+
+if [ $dryrun -eq 0 ]; then
+    echo "Please confirm planned copy:"
+    echo ""
+    echo $cmd
+    echo ""
+
+    REPLY=""
+    while [[ $REPLY != "n" && $REPLY != "N" && $REPLY != "y" && $REPLY != "Y" ]]; do
+	read -p "Okay (y/n)? "
+    done
+
+    if [[ $REPLY = "n" || $REPLY = "N" ]]; then
+	echo "Aborting"
+	exit 0
+    fi
+
+    echo ""
+
+else
+    echo "Dry run only; planned copy:"
+fi
+
+# ----------------------------------------------------------------------
+# Make new tag
+# ----------------------------------------------------------------------
+
+do_cmd "$cmd" $dryrun
+if [ $? -ne 0 ]; then
+    echo "ERROR creating new tag"
+    exit 1
+fi
+
+# ----------------------------------------------------------------------
+# Print any final messages
+# ----------------------------------------------------------------------    
+
+if [ $dryrun -ne 0 ]; then
+    echo ""
+    echo "NOTE: This was a dry run. If you are satisfied, please re-run without the '-d' switch."
+fi
+
+
+
+
+
+# ----------------------------------------------------------------------
+# OLD NOTES: HOW TO DETERMINE THE NEW TAG NUMBER AUTOMATICALLY
+# (Now I instead require the user to provide the new tag name)
+# ----------------------------------------------------------------------
 
 # Create a search string to extract the tag number:
 # Note that these search strings capture the tag number in \2,
