@@ -65,7 +65,7 @@ url=""
 quiet=0
 print_revision=0
 
-while getopts hpqt:u: opt; do
+while getopts hrqt:u: opt; do
     case $opt in
 	h) Usage; exit;;
 	q) quiet=1;;
