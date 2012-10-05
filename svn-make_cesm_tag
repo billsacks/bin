@@ -144,6 +144,11 @@ fi
 # ----------------------------------------------------------------------
 
 main_and_tags=`svn-get_root_urls -u $url`
+if [ $? -ne 0 ]; then
+    echo "ERROR from svn-get_root_urls"
+    echo "$main_and_tags"
+    exit 1
+fi
 main_url=`echo $main_and_tags | awk '{print $1}'`
 tags_url=`echo $main_and_tags | awk '{print $2}'`
 
@@ -155,7 +160,7 @@ new_tag_url=$tags_url/$tag_name
 
 echo "Making sure desired tag doesn't already exist..."
 result=`svn ls $new_tag_url 2>/dev/null`
-if [ -z $? ]; then
+if [ $? -eq 0 ]; then
     echo "ERROR: desired tag URL already exists!"
     echo "$new_tag_url"
     exit 1
@@ -171,6 +176,11 @@ echo ""
 # The following gets two lines: first contains tag & revision from which it was made;
 # second gets some additional info
 latest_tag_info_full=`svn-latest_tag -t $tags_url -r`
+if [ $? -ne 0 ]; then
+    echo "ERROR from svn-latest_tag"
+    echo "$latest_tag_info_full"
+    exit 1
+fi
 
 # Now extract the pieces:
 latest_tag_info_main=`echo "$latest_tag_info_full" | head -1`
