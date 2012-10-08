@@ -141,7 +141,7 @@ from_revision=${right_of_colon%)}
 # Print results
 # ----------------------------------------------------------------------
 
-if [ $print_revision ]; then
+if [ $print_revision -eq 1 ]; then
     echo $latest_tag $from_revision
 else
     echo $latest_tag
