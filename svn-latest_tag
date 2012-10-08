@@ -45,10 +45,6 @@ function Usage {
     echo "          (Only used if -t tags_url is not given)"
     echo "          (If neither -t or -u are given, use URL of current directory)"
     echo ""
-    echo ""
-    echo "Intention is to use -q and -r when this is called from another script,"
-    echo "and to use neither of these options when called interactively, for human use"
-    echo ""
 }
 
 # ----------------------------------------------------------------------
