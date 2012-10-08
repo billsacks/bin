@@ -213,7 +213,7 @@ echo "Changes since last tag:"
 echo ""
 echo ""
 
-do_cmd "svn log -r ${latest_tag_revision}:HEAD -v $main_url" 0
+do_cmd "svn log -r HEAD:${latest_tag_revision} -v $main_url" 0
 
 echo ""
 echo ""
