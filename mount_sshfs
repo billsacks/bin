@@ -71,8 +71,7 @@ remote_location=$2
 mount_point=$3
 volname=$4
 
-echo "You may have to enter your local password to make the mount_point directory:"
-sudo mkdir -p $mount_point
+mkdir -p $mount_point
 do_cmd "sshfs ${user_name}@${machname}:${remote_location} $mount_point -oauto_cache,volname=$volname" 0
 # NOTE: Until 11-9-10, also had reconnect option, but I think this was raising some flags at CISL, so I turned it off
 
