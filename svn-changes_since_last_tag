@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# Bill Sacks
+# Oct 25, 2012
+
+# This script shows you the changes since the last tag.
+
+# In order to reuse code, it does this by using svn-make_cesm_tag with
+# the "dryrun" flag. This means that some extra stuff is printed that
+# can be ignored.
+
+svn-make_cesm_tag -d -m 'testing' XXX_DUMMY_TAG_XXX
