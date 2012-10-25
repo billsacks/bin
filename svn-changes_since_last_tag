@@ -9,4 +9,7 @@
 # the "dryrun" flag. This means that some extra stuff is printed that
 # can be ignored.
 
+# Currently, it just runs on the url given by the current directory
+# (it does not support the -u flag)
+
 svn-make_cesm_tag -d -m 'testing' XXX_DUMMY_TAG_XXX
