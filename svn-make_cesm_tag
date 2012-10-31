@@ -205,10 +205,6 @@ latest_tag_revision=`echo $latest_tag_info_extra | awk '{print $1}'`
 # revisions included in this tag
 # ----------------------------------------------------------------------
 
-echo "Last tag was:"
-echo "$latest_tag_url"
-echo "$latest_tag_info_extra"
-echo ""
 echo "Changes since last tag:"
 echo ""
 echo ""
@@ -216,6 +212,10 @@ echo ""
 do_cmd "svn log -r HEAD:${latest_tag_revision} -v $main_url" 0
 
 echo ""
+echo ""
+echo "Last tag was:"
+echo "$latest_tag_url"
+echo "$latest_tag_info_extra"
 echo ""
 
 # ----------------------------------------------------------------------
