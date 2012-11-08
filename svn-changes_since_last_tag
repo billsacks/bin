@@ -9,7 +9,43 @@
 # the "dryrun" flag. This means that some extra stuff is printed that
 # can be ignored.
 
-# Currently, it just runs on the url given by the current directory
-# (it does not support the -u flag)
+# ----------------------------------------------------------------------
+# LOCAL FUNCTIONS DEFINED HERE
+# ----------------------------------------------------------------------
 
-svn-make_cesm_tag -d -m 'testing' XXX_DUMMY_TAG_XXX
+function Usage {
+    progname=`basename $0`
+    echo "Usage: $progname [-h] [-u url]"
+    echo "Shows changes made since the last tag, and other useful information"
+    echo "If -u is given, use the given url, otherwise use svn url of current directory"
+    echo ""
+    echo "The following are optional arguments:"
+    echo "[-h]: Print this help message and exit"
+    echo ""
+    echo "[-u URL]: Use the specified URL to find the appropriate trunk/trunk_tags"
+    echo "          or branch/branch_tags directories"
+    echo "          (If not given, uses the URL of the current directory)"
+    echo ""
+}
+    
+
+# ----------------------------------------------------------------------
+# BEGIN MAIN SCRIPT
+# ----------------------------------------------------------------------
+
+url=""
+while getopts hu: opt; do
+    case $opt in
+	h) Usage; exit;;
+	u) url=$OPTARG;;
+	\?) Usage; exit 1
+    esac
+done
+
+args="-d -m 'testing' XXX_DUMMY_TAG_XXX"
+if [[ -n "$url" ]]; then
+    args="-u $url $args"
+fi
+
+svn-make_cesm_tag $args
+
