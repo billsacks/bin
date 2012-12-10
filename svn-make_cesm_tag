@@ -3,10 +3,10 @@
 # Bill Sacks
 # 1-3-11
 
-# This script makes a new tag following the CESM tagging
-# convention. The tag is a copy of the trunk or branch associated with
-# the current URL, unless another URL is specified. The tag is placed
-# in the associated trunk_tags or branch_tags directory.
+# This script makes a new tag, and gives information about the changes
+# you are tagging. The tag is a copy of the trunk or branch associated
+# with the current URL, unless another URL is specified. The tag is
+# placed in the associated trunk_tags or branch_tags directory.
 
 # ----------------------------------------------------------------------
 # SOURCE EXTERNAL FUNCTIONS
@@ -24,7 +24,7 @@ function Usage {
     progname=`basename $0`
     echo "Usage: $progname [-d] [-h] [-m message] [-F logfile] [-u url] tag_name"
     echo ""
-    echo "This script makes a new tag following the CESM tagging convention."
+    echo "This script makes a new tag, and gives information about the changes you are tagging."
     echo "The tag is a copy of the trunk or branch associated with the current URL,"
     echo "or another URL if specified. The tag is placed in the associated trunk_tags"
     echo "or branch_tags directory."
@@ -51,6 +51,7 @@ function Usage {
     echo ""
     echo "[-m message]: log message to use for the copy"
     echo "              Either this or -F logfile MUST be specified"
+    echo "              NOTE: If this is a double-quoted string, do NOT include single quotes within the string"
     echo ""
     echo "[-F logfile]: log file to use for the copy"
     echo "              Either this or -m message MUST be specified"
