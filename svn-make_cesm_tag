@@ -176,24 +176,12 @@ fi
 echo ""
 
 # ----------------------------------------------------------------------
-# Determine the latest tag and the revision in which it was created
+# Determine the latest tag and revision on which it was based
 # ----------------------------------------------------------------------
-
-# Note: I used to get the revision from which the tag was copied
-# (using the -r switch to svn-latest_tag) rather than getting the
-# revision of the tag itself. That is more robust for catching
-# problems, like some trunk commits not being included in the last
-# tag. However, it was giving some "false positives" (saying that some
-# changes weren't included in the last tag when they really were),
-# which seemed to stem from people using a workflow that I didn't
-# expect. So now I am just doing the simpler thing of looking at
-# changes since the last tag was made - this assumes that the last tag
-# captures all changes that were made up to that point on the
-# respective trunk / branch.
 
 # The following gets two lines: first contains tag & revision from which it was made;
 # second gets some additional info
-latest_tag_info_full=`svn-latest_tag -t $tags_url`
+latest_tag_info_full=`svn-latest_tag -t $tags_url -r`
 if [ $? -ne 0 ]; then
     echo "ERROR from svn-latest_tag"
     echo "$latest_tag_info_full"
@@ -201,9 +189,11 @@ if [ $? -ne 0 ]; then
 fi
 
 # Now extract the pieces:
-latest_tag_url=`echo "$latest_tag_info_full" | head -1`
+latest_tag_info_main=`echo "$latest_tag_info_full" | head -1`
+latest_tag_url=`echo $latest_tag_info_main | awk '{print $1}'`
+from_revision=`echo $latest_tag_info_main | awk '{print $2}'`
+let from_revision_p1=from_revision+1
 latest_tag_info_extra=`echo "$latest_tag_info_full" | tail -1`
-latest_tag_revision=`echo $latest_tag_info_extra | awk '{print $1}'`
 
 # ----------------------------------------------------------------------
 # Do an svn log from the revision on which the latest tag was based
@@ -215,7 +205,7 @@ echo "Changes since last tag:"
 echo ""
 echo ""
 
-do_cmd "svn log -r HEAD:${latest_tag_revision} -v $main_url" 0
+do_cmd "svn log -r HEAD:${from_revision_p1} -v $main_url" 0
 
 echo ""
 echo ""
