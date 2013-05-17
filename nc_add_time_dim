@@ -8,3 +8,4 @@
 
 ncecat -O $1 $2
 ncrename -d record,time $2
+ncap2 -O -s 'time[$time]=1.0' $2
