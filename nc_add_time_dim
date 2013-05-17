@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# Add a time record dimension to a file.
+# This is useful so that the file can be run through cprnc, which
+# expects a time dimension.
+
+# Usage: nc_add_time_dim infile.nc outfile.nc
+
+ncecat -O $1 $2
+ncrename -d record,time $2
