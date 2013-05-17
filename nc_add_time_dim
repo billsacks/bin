@@ -8,5 +8,5 @@
 
 ncecat -O $1 $2
 ncrename -d record,time $2
-ncap2 -s 'time[$time]=1.0' $2.temp.$$
+ncap2 -s 'time[$time]=1.0' $2 $2.temp.$$
 mv $2.temp.$$ $2
