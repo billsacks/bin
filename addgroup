@@ -8,8 +8,6 @@
 # Create a group.
 # Takes a group name and gid and creates a new group in NetInfo groups
 
-# here is some comment
-
 
 usage ()
 {
