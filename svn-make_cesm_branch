@@ -84,7 +84,7 @@ function Usage {
     echo "  https://svn-ccsm-models.cgd.ucar.edu/drv/seq_mct/branches/coolbranch"
     echo "In addition, a corresponding branch_tags directory will be created,"
     echo "and a new branch tag will be created with the name:"
-    echo "  https://svn-ccsm-models.cgd.ucar.edu/drv/seq_mct/branch_tags/coolbranch_tags/coolbranch_00_drvseq3_1_51"
+    echo "  https://svn-ccsm-models.cgd.ucar.edu/drv/seq_mct/branch_tags/coolbranch_tags/coolbranch_n00_drvseq3_1_51"
     echo "Finally, because of the -s argument, the current directory"
     echo "will be svn switch'ed to:"
     echo "  https://svn-ccsm-models.cgd.ucar.edu/drv/seq_mct/branches/coolbranch"
@@ -98,7 +98,7 @@ function Usage {
     echo "  https://svn-ccsm-models.cgd.ucar.edu/clm2/branches/coolerbranch"
     echo "In addition, a corresponding branch_tags directory will be created,"
     echo "and a new branch tag will be created with the name:"
-    echo "  https://svn-ccsm-models.cgd.ucar.edu/clm2/branch_tags/coolerbranch_tags/coolerbranch_00_tcens02_clm4_0_32"
+    echo "  https://svn-ccsm-models.cgd.ucar.edu/clm2/branch_tags/coolerbranch_tags/coolerbranch_n00_tcens02_clm4_0_32"
     echo "Finally, because of the -s argument, the current directory"
     echo "will be svn switche'ed to:"
     echo "  https://svn-ccsm-models.cgd.ucar.edu/clm2/branches/coolerbranch/models/lnd/clm"
@@ -279,7 +279,7 @@ echo ""
 
 branch_url=$root/branches/$branch
 tags_url=$root/branch_tags/${branch}_tags
-this_tag_url=$tags_url/${branch}_00_$curtag
+this_tag_url=$tags_url/${branch}_n00_$curtag
 
 branch_msg="branch for $description"
 tags_msg="branch tags for $description"
