@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Make a histFldsMod SourceMod file which turns on ALL CLM history fields
+
+# This should be run from your case directory; it assumes you are using CLM4.5
+
+source do_cmd.bash
+
+if [ ! -e SourceMods/src.clm/histFldsMod.F90 ]; then
+    do_cmd "cp ../../models/lnd/clm/src/clm4_5/main/histFldsMod.F90 SourceMods/src.clm/" 0
+fi
+sed -i -e "s/'inactive'/'active'/g" SourceMods/src.clm/histFldsMod.F90
+sed -i -e 's/"inactive"/"active"/g' SourceMods/src.clm/histFldsMod.F90
+
+do_cmd "echo 'hist_ndens = 1' >> user_nl_clm" 0
