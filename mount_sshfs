@@ -47,7 +47,7 @@ function Usage {
 # define default values:
 
 link_point=""
-user_name=sacks
+user_name=$USER
 
 while getopts hl:u: opt; do
     case $opt in
