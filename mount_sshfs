@@ -72,7 +72,7 @@ mount_point=$3
 volname=$4
 
 mkdir -p $mount_point
-do_cmd "sshfs ${user_name}@${machname}:${remote_location} $mount_point -o volname=$volname" 0
+do_cmd "sshfs ${user_name}@${machname}:${remote_location} $mount_point -oauto_cache,volname=$volname" 0
 # NOTE: Until 11-9-10, also had reconnect option, but I think this was raising some flags at CISL, so I turned it off
 
 if [ -n "$link_point" ]; then  # if link_point was provided
