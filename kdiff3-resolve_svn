@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# Bill Sacks
+# March 18, 2014
+
+# Resolve an svn conflict via kdiff3
+# Usage: kdiff3-resolve_svn FILE
+
+file=$1
+kdiff3 ${file}.merge-left* ${file}.working ${file}.merge-right* -o ${file}
+
