@@ -1,0 +1,34 @@
+#!/usr/bin/perl
+
+# Meant to take as input the output from a cs.status command.
+# Prints important lines, and counts of ignored lines.
+
+# Intended usage: cs.status.<whatever> | filter_cs_status
+
+use strict;
+use warnings;
+use Data::Dumper;
+
+my %counts;
+
+while (<>) {
+   my $line = $_; 
+   if ($line =~ /^PASS/) {
+      $counts{'PASS'}++;
+   }
+   elsif ($line =~ /\.tputcomp\./) {
+      $counts{'tputcomp'}++;
+   }
+   elsif ($line =~ /^COMMENT/) {
+      $counts{'COMMENT'}++;
+   }
+   elsif ($line =~ /^BFAIL_NA/) {
+      $counts{'BFAIL_NA'}++;
+   }
+   else {
+      print $line;
+   }
+}
+
+print "Ignored lines:\n";
+print Dumper(\%counts);
