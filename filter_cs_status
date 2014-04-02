@@ -5,6 +5,12 @@
 
 # Intended usage: cs.status.<whatever> | filter_cs_status
 
+# Possible future extension: allow any number of command-line arguments. Each
+# argument is a regular expression that is treated the same as the other
+# 'ignore' regular expressions (i.e., so you don't need to pipe the output of
+# this to, e.g., 'grep -v nlcomp' -- instead, you'd just add 'nlcomp' as an
+# argument to this command).
+
 use strict;
 use warnings;
 use Data::Dumper;
