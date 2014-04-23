@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# Do an svn switch to the main branch (or trunk) corresponding to the current
+# URL. This is intended to be used when you are in a directory corresponding to
+# a branch (or trunk) tag, and want to switch to the corresponding branch (or
+# trunk).
+#
+# Note that you MUST be in the top-level directory of the given branch tag for
+# this to work correctly (e.g., do NOT run this from within models/lnd/clm).
+
+source do_cmd.bash
+
+main_url=`svn-get_root_urls | awk '{print $1}'`
+do_cmd "svn switch ${main_url}" 0
