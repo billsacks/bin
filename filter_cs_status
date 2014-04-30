@@ -5,11 +5,9 @@
 
 # Intended usage: cs.status.<whatever> | filter_cs_status
 
-# Possible future extension: allow any number of command-line arguments. Each
-# argument is a regular expression that is treated the same as the other
-# 'ignore' regular expressions (i.e., so you don't need to pipe the output of
-# this to, e.g., 'grep -v nlcomp' -- instead, you'd just add 'nlcomp' as an
-# argument to this command).
+# Additional arguments can be given to give other regular expressions to ignore. For example:
+#    cs.status.<whatever> | filter_cs_status nlcomp memcomp
+# will ignore nlcomp and memcomp lines in addition to the standard ignored line
 
 use strict;
 use warnings;
@@ -17,21 +15,22 @@ use Data::Dumper;
 
 my %counts;
 
-while (<>) {
+my @ignores = ('^PASS', '\.tputcomp\.', '^COMMENT', '^BFAIL_NA');
+push @ignores, @ARGV;
+
+while (<STDIN>) {
    my $line = $_; 
-   if ($line =~ /^PASS/) {
-      $counts{'PASS'}++;
+   
+   my $ignored = 0;
+   foreach my $ignore_re (@ignores) {
+      if ($line =~ /$ignore_re/) {
+         $counts{$ignore_re}++;
+         $ignored = 1;
+         last;
+      }
    }
-   elsif ($line =~ /\.tputcomp\./) {
-      $counts{'tputcomp'}++;
-   }
-   elsif ($line =~ /^COMMENT/) {
-      $counts{'COMMENT'}++;
-   }
-   elsif ($line =~ /^BFAIL_NA/) {
-      $counts{'BFAIL_NA'}++;
-   }
-   else {
+
+   if (!($ignored)) {
       print $line;
    }
 }
