@@ -18,6 +18,8 @@ my %counts;
 my @ignores = ('^PASS', '\.tputcomp\.', '^COMMENT', '^BFAIL_NA');
 push @ignores, @ARGV;
 
+print "========================================================================\n";
+
 while (<STDIN>) {
    my $line = $_; 
    
@@ -35,5 +37,8 @@ while (<STDIN>) {
    }
 }
 
+print "========================================================================\n";
 print "Ignored lines:\n";
-print Dumper(\%counts);
+foreach my $key (sort keys %counts) {
+   print "   $key : $counts{$key}\n";
+}
