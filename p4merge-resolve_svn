@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# Bill Sacks
+# August 29, 2014
+
+# Resolve an svn conflict via p4merge
+# Usage: p4merge-resolve_svn FILE
+
+file=$1
+launchp4merge ${file}.merge-left* ${file}.working ${file}.merge-right* ${file}
+
