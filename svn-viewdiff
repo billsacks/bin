@@ -86,7 +86,7 @@ usage ()
 declare -i labelnum
 labelnum=0
 prefix=""
-sleeptime=1
+sleeptime=0.5
 while [ $# != 0 ]; do
   case "$1" in
     --help)
@@ -231,9 +231,9 @@ fi;
 
 echo opendiff "${file1}" "${file2}";
 if [ -z "${merge}" ]; then
-    opendiff "${file1}" "${file2}";
+    opendiff "${file1}" "${file2}" &
 else
-    opendiff "${file1}" "${file2}" -merge "${merge}";
+    opendiff "${file1}" "${file2}" -merge "${merge}" &
 fi;
 
 
