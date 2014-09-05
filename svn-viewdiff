@@ -59,10 +59,6 @@ usage ()
   echo "                             window menu, by giving them all the same prefix)"
   echo "                             (note: for readability, put a separator like '_' at the"
   echo "                             end of the prefix)"
-  echo "  --sleep X                  sleep for this number of seconds between the call to"
-  echo "                             opendiff and removing temporary files"
-  echo "                             (defaults to 1; increase this if you have problems,"
-  echo "                             e.g., with files not being found)"
   echo "  -c                         Ignored";
   echo "  -C --context X             Ignored";
   echo "  -u                         Ignored";
@@ -86,7 +82,6 @@ usage ()
 declare -i labelnum
 labelnum=0
 prefix=""
-sleeptime=0.5
 while [ $# != 0 ]; do
   case "$1" in
     --help)
@@ -112,13 +107,6 @@ while [ $# != 0 ]; do
       shift 1; # get rid of the "--prefix"
       prefix=$1
       shift 1; # shift the prefix itself away
-      ;;
-
-# Determine time to sleep between call to opendiff and removing temp files
-    --sleep)
-      shift 1; # get rid of the "--sleep"
-      sleeptime=$1
-      shift 1; # shift away the sleeptime itself
       ;;
 
     # These display options would not make sense for FileMerge
@@ -236,11 +224,3 @@ else
     opendiff "${file1}" "${file2}" -merge "${merge}" &
 fi;
 
-
-# Give FileMerge some time before letting svn diff continue and possibly delete
-# any temp files, or before deleting our own temp files.
-sleep $sleeptime
-
-# WJS (1-13-11): Added removal of the linkdir temporary directory
-rm -rf "${linkdir}"
-if [ -n "${tmp}" ]; then (rm -rf "${tmp}") & fi;
