@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env perl
 
 # Bill Sacks
 # August 29, 2014
@@ -6,6 +6,57 @@
 # Resolve an svn conflict via p4merge
 # Usage: p4merge-resolve_svn FILE
 
-file=$1
-launchp4merge ${file}.merge-left* ${file}.working ${file}.merge-right* ${file}
+use strict;
+use warnings;
+
+my $file = $ARGV[0];
+
+my $file_working;
+my $file_base;
+my $file_new;
+
+if (-e "${file}.working") {
+   $file_working = "${file}.working";
+   my @base_files = <${file}.merge-left*>;
+   if (scalar @base_files != 1) {
+      die "expected to find exactly 1 file matching .merge-left";
+   }
+   $file_base = $base_files[0];
+   my @new_files = <${file}.merge-right*>;
+   if (scalar @new_files != 1) {
+      die "expected to find exactly 1 file matching .merge-right";
+   }
+   $file_new = $new_files[0];
+}
+elsif (-e "${file}.mine") {
+   $file_working = "${file}.mine";
+   my @other_files = <${file}.r*>;
+   if (scalar @other_files != 2) {
+      die "expected to find 2 files with .r extensions; instead found " . scalar @other_files;
+   }
+   my @other_files_sorted = sort {get_revision_number($a) <=> get_revision_number($b)} @other_files;
+   $file_base = $other_files_sorted[0];
+   $file_new = $other_files_sorted[1];
+}
+else {
+   die "cannot find either ${file}.working or ${file}.mine";
+}
+
+system("launchp4merge $file_base $file_working $file_new $file");
+
+sub get_revision_number {
+   # strip the revision number from a file name that looks like: foo.rNNN (in this case, get NNN)
+
+   my $filename = shift;
+   my $rev;
+
+   if ($filename =~ /\.r([0-9]+)$/) {
+      $rev = $1;
+   }
+   else {
+      die "revision number not found in $filename";
+   }
+
+   return $rev;
+}
 
