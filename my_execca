@@ -5,7 +5,7 @@ argc=$#
 exe=$1
 cmd=$(basename $(echo $0))
 
-if [ $(echo $cmd|cut -c5-6) = "ca" ] ; then
+if [ $(echo $cmd|cut -c8-9) = "ca" ] ; then
    queue=caldera
 else
    queue=geyser
