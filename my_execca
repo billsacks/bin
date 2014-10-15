@@ -85,4 +85,4 @@ cat << EOF
   please wait..
 
 EOF
-bsub -Is -q $queue -n$NCORES -P$PROJ -W24:00 "$args"
+eval bsub -Is -q $queue -n$NCORES -P$PROJ -W24:00 "$BSUB_EXTRA_ARGS" "$args"
