@@ -38,6 +38,12 @@ while (<STDIN>) {
 
 print "========================================================================\n";
 print "Ignored lines:\n";
-foreach my $key (sort keys %counts) {
-   print "   $key : $counts{$key}\n";
+# Print ignores in the order in which they appear in the original array, since
+# that mirrors the order in which the ignores are compared. That way, if a line
+# contains multiple 'ignores', it's clear which element of the @ignores array is
+# the one counted.
+foreach my $key (@ignores) {
+   if (defined $counts{$key}) {
+      print "   $key : $counts{$key}\n";
+   }
 }
