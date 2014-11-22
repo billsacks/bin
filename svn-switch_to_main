@@ -8,7 +8,54 @@
 # Note that you MUST be in the top-level directory of the given branch tag for
 # this to work correctly (e.g., do NOT run this from within models/lnd/clm).
 
+# ----------------------------------------------------------------------
+# SOURCE EXTERNAL FUNCTIONS
+# ----------------------------------------------------------------------
+
+# Note that the following must be in your path, or the current directory
+
 source do_cmd.bash
 
+# ----------------------------------------------------------------------
+# LOCAL FUNCTIONS DEFINED HERE
+# ----------------------------------------------------------------------
+
+function Usage {
+    progname=`basename $0`
+    echo "Usage: $progname [-h] [-p path]"
+    echo ""
+    echo "Does an svn switch to the main branch (or trunk) corresponding to the current URL"
+    echo ""
+    echo "The following are optional arguments:"
+    echo "[-h]: Print this help message and exit"
+    echo "[-p path]: Rather than switching to the top-level of the branch,"
+    echo "           switch to PATH_TO_BRANCH/$path"
+    echo "           e.g., for CAM within a CESM checkout, use -p 'models/atm/cam'"
+    echo ""
+}
+
+# ----------------------------------------------------------------------
+# BEGIN MAIN SCRIPT
+# ----------------------------------------------------------------------
+
+# ----------------------------------------------------------------------
+# Handle command-line arguments
+# ----------------------------------------------------------------------
+
+
+path=""
+
+while getopts hp: opt; do
+    case $opt in
+	h) Usage; exit;;
+	p) path=$OPTARG;;
+	\?) Usage; exit 1
+    esac
+done
+
+# ----------------------------------------------------------------------
+# Do the work
+# ----------------------------------------------------------------------
+
 main_url=`svn-get_root_urls | awk '{print $1}'`
-do_cmd "svn switch ${main_url}" 0
+do_cmd "svn switch ${main_url}/${path}" 0
