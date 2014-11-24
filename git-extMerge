@@ -1,2 +1,3 @@
 #!/bin/sh
-opendiff $*
+opendiff $* &
+sleep 0.5
