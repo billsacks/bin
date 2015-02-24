@@ -1,0 +1,17 @@
+#!/bin/bash
+
+results_dir=~sacks/.spotlight_index_docx
+search_dir=~sacks
+
+pushd $results_dir
+time_stamp=`date '+%y%m%d-%H%M%S'`
+find $search_dir -name '*.docx' -newer ./last_indexed -print -exec mdimport {} \;  > indexed_files.${time_stamp}
+# NOTE: really, I should touch this before doing the find, so that next time
+# around we don't exclude files that were modified during the find. But then I'd
+# need to build in more robustness; e.g.:
+#  - touch last_indexed.new
+#  - after the find, move last_indexed.new to last_indexed
+#  - and maybe only do the latter if find exits with a non-zero error code???
+touch last_indexed
+
+popd
