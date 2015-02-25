@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# This script indexes all .docx files. This is needed as a workaround, because
+# the automatic re-indexing of .docx files seems broken.
+
+# If run without any arguments, it will reindex everything in the current
+# directory (and subdirectories). If run with one argument, it treats that
+# argument as a path, and reindexes everything in that path (and
+# subdirectories).
+
+search_path=.
+
+if [[ $# -eq 1 ]]; then
+    search_path=$1
+fi
+
+find $search_path -name '*.docx' -print -exec mdimport {} \;
