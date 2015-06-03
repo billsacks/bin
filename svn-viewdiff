@@ -224,3 +224,9 @@ else
     opendiff "${file1}" "${file2}" -merge "${merge}" &
 fi;
 
+# WJS (6-3-15): A bug in FileMerge motivated me to make a wrapper to opendiff
+# that sets the MergeHeight parameter before calling opendiff. But if you call
+# svn-viewdiff with multiple files, the second and subsequent files have bad
+# MergeHeights. Putting in a short sleep to fix that (although this isn't a long
+# enough sleep to fix it in all cases).
+sleep 0.5
