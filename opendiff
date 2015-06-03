@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# In OS 10.10, there is a bug in FileMerge that keeps resetting the default
+# MergeHeight to a non-zero number. So before doing the opendiff call, set that
+# value to 0.
+defaults write com.apple.FileMerge MergeHeight 0
+
+/usr/bin/opendiff "$@"
