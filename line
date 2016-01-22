@@ -1,0 +1,23 @@
+#!/bin/sh
+# Prints a given line, or range of lines, from a file
+# Adapted from GJ Holzmann 2016 "Tiny Tools" (IEEE Software)
+
+if [ $# -lt 2 -o $# -gt 3 ]; then
+    echo "usage: line file linenr [nrlines]"
+    exit 1
+fi
+
+if [ ! -f $1 ]; then
+    echo "error: no such file: $1"
+    exit 1
+fi
+
+n1=$2
+n2=$2
+
+if [ $# -eq 3 ]; then
+    n1=`expr $n1 - $3`
+    n2=`expr $n2 + $3`
+fi
+
+awk "FNR >= $n1 && FNR <= $n2 {print NR,\$0}" $1
