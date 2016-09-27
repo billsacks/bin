@@ -14,7 +14,7 @@ use warnings;
 
 my %counts;
 
-my @ignores = ('^\s*$', '^ *---', '^ *DONE', '^ *PASS', '\.tputcomp\.', '^ *COMMENT', '^ *BFAIL_NA');
+my @ignores = ('^\s*$', '^ *---', '^ *DONE', '^ *PASS', 'Overall: PASS', '\.tputcomp\.', '^ *COMMENT', '^ *BFAIL_NA');
 push @ignores, @ARGV;
 
 print "========================================================================\n";
