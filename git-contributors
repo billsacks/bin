@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# Count contributions from all contributors to a given file
+
+# Usage: git-contributors PATH/TO/FILE
+
+# From http://stackoverflow.com/questions/4589731/git-blame-statistics
+
+file=$1
+git blame --line-porcelain $file | grep "^author " | sort | uniq -c | sort -nr
