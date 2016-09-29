@@ -14,7 +14,8 @@ use warnings;
 
 my %counts;
 
-my @ignores = ('^\s*$', '^ *---', '^ *DONE', '^ *PASS', 'Overall: PASS', '\.tputcomp\.', '^ *COMMENT', '^ *BFAIL_NA');
+# Note that we ignore the overall status - just looking at the status of individual pieces
+my @ignores = ('^\s*$', '^ *---', '^ *DONE', '^ *PASS', '\(Overall:', '\.tputcomp\.', '^ *COMMENT', '^ *BFAIL_NA');
 push @ignores, @ARGV;
 
 print "========================================================================\n";
