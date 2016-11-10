@@ -15,7 +15,7 @@ use warnings;
 my %counts;
 
 # Note that we ignore the overall status - just looking at the status of individual pieces
-my @ignores = ('^\s*$', '^ *---', '\(Overall:', '^ *DONE', '^ *PASS', '\.tputcomp\.', '^ *COMMENT', '^ *BFAIL_NA');
+my @ignores = ('^\s*$', '^[^ ].*\(Overall:.*details:', '^ *PASS', '^ *TPUTCOMP', '^ *MEMCOMP');
 push @ignores, @ARGV;
 
 print "========================================================================\n";
