@@ -24,8 +24,8 @@ function Usage {
     echo "Usage: $0 N"
     echo "N: files / directories at least N days old are moved to trash"
     echo ""
-    echo "Move any files / directories in the current directory that are more"
-    echo "than N days old into a new folder called 'trash'"
+    echo "Move any files / directories in the current directory that are more than N"
+    echo "days old and owned by the current user into a new folder called '${trashdir}'"
     echo ""
 }
 
@@ -37,12 +37,12 @@ fi
 n=$1
 
 if [ -e $trashdir ]; then
-    echo "trash already exists; please remove or rename then re-run this script"
+    echo "${trashdir} already exists; please remove or rename then re-run this script"
     exit 1
 fi
 mkdir $trashdir
 
-oldfiles=`find * -maxdepth 0 -mtime +$n`
+oldfiles=`find * -maxdepth 0 -user sacks -mtime +$n`
 ls -Gdlrt $oldfiles
 mv $oldfiles $trashdir
 
