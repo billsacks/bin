@@ -6,10 +6,6 @@
 # With no arguments, uses the current directory. With one or more arguments,
 # prints contents of all of those directories.
 
-# If given one or more argumen
-# Takes one argument: directory for which we print file contents; if not
-# specified, uses the current directory
-
 if [ $# -ge 1 ]; then
     mydir="$@"
 else
