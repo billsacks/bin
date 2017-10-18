@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# Take the current contents of the clipboard, run them through a tool
+# that does syntax highlighting in rtf format, then copy the result back
+# to the clipboard.
+#
+# Any command-line arguments are passed along to the pygmentize
+# tool. You should generally at least specify the language, e.g.:
+#
+#   pbhighlight -l python
+
+pbpaste | pygmentize -f rtf "$@" | pbcopy
