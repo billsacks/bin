@@ -1,8 +1,7 @@
 #!/bin/bash
 
-# Move any files / directories in the current directory that have not
-# been accessed in more than N days and are owned by the current user
-# into a new folder called "trash_$USER".
+# Move any files / directories in the current directory that are more than N
+# days old and owned by the current user into a new folder called "trash_$USER".
 #
 # The point of this is: Then we can delete these old files /
 # directories (after reviewing them).
@@ -43,7 +42,7 @@ if [ -e $trashdir ]; then
 fi
 mkdir $trashdir
 
-oldfiles=`find * -maxdepth 0 -user sacks -atime +$n`
+oldfiles=`find * -maxdepth 0 -user sacks -mtime +$n`
 ls -Gdlrt $oldfiles
 mv $oldfiles $trashdir
 
