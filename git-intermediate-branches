@@ -1,0 +1,105 @@
+#!/usr/bin/env python
+"""List candidate intermediate git branches between two points
+
+Let's say you have a branch 'foo', and you are wondering if this
+branched directly off of master or if it branched off of some other
+branch 'bar'. This script helps answer this question by showing all
+branches that contain commits that are on 'foo' but not on master.
+
+If 'foo' branched directly from master (and there is no complicated
+merge history), then this should only list 'foo' itself. If other
+branches are listed, then those are candidate branches from which 'foo'
+might have branched.
+
+Caveats:
+
+(1) This only knows about branches known to the current repository. This
+    includes all branches visible with 'git branch -a', but will not
+    include branches that are on some non-fetched remote or branches
+    that have been deleted.
+
+(2) This cannot provide a definitive answer to the question of where
+    branch 'foo' originated; it can only provide candidate branches for
+    follow-up investigation. For example, if it finds that branch 'bar'
+    also contains some of the commits on 'foo' and not on master, this
+    could mean either (a) 'bar' branched from master, then 'foo'
+    branched from 'bar'; or (b) 'foo' branched from master, then 'bar'
+    branched from 'foo'.
+
+Author: Bill Sacks <sacks@ucar.edu>
+"""
+
+import argparse
+import subprocess
+
+def commandline_options(description):
+    """Process command-line arguments
+
+    Returns an options object holding all parsed options
+    """
+    parser = argparse.ArgumentParser(
+        description=description,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+
+    parser.add_argument('branch',
+                        help='Branch in question')
+
+    parser.add_argument('--base', default='master',
+                        help="""Base branch that is known to be an
+                        ancestor (though maybe not a direct ancestor of
+                        the given branch). This script asks the question:
+                        what other branches might be ancestors in
+                        between this base branch and the given
+                        branch? If not given, defaults to 'master'.""")
+
+    options = parser.parse_args()
+    return options
+
+def get_commits_on_branch(branch, base):
+    """Returns a list of commits on branch not on base
+
+    Arguments:
+       branch: str
+       base: str
+    """
+
+    cmd = ['git', 'rev-list', branch, '^{}'.format(base)]
+    cmd_result = subprocess.check_output(cmd)
+    commits = cmd_result.splitlines()
+    return commits
+
+def get_branches(commits):
+    """Returns a set of all branches that contain any of the given
+    commits
+
+    Arguments:
+       commits: list of strings
+    """
+
+    branch_set = set()
+    for commit in commits:
+        cmd = ['git', 'branch', '-a', '--contains', commit]
+        cmd_result = subprocess.check_output(cmd)
+        branches_containing_commit = cmd_result.splitlines()
+        branch_set.update(branches_containing_commit)
+
+    return branch_set
+
+def print_branches(branches):
+    """Print the given branches
+    
+    Arguments:
+       branches: iterable of strings
+    """
+
+    for branch in branches:
+        print(branch)
+
+def _main_func(description):
+    options = commandline_options(description)
+    commits = get_commits_on_branch(options.branch, options.base)
+    intermediate_branches = get_branches(commits)
+    print_branches(intermediate_branches)
+
+if __name__ == "__main__":
+    _main_func(__doc__)
