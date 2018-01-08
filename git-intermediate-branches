@@ -97,6 +97,13 @@ def print_branches(branches):
 
 def _main_func(description):
     options = commandline_options(description)
+    # In many cases, it would work to just get the oldest commit that is
+    # on this branch but not on the base branch. However, that can miss
+    # some possible intermediate branches in cases where the given
+    # branch has a complex history that has involved merging from a few
+    # different sources: in this case, the intermediate branch of
+    # interest may be one that was merged in part-way along the given
+    # branch's history.
     commits = get_commits_on_branch(options.branch, options.base)
     intermediate_branches = get_branches(commits)
     print_branches(intermediate_branches)
