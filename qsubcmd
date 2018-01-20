@@ -1,0 +1,86 @@
+#!/usr/bin/env python
+"""Submit a command to a compute node via qsub
+
+Defaults are set up to work well on cheyenne
+
+Author: Bill Sacks <sacks@ucar.edu>
+"""
+
+from __future__ import print_function
+import argparse
+import subprocess
+
+def commandline_options():
+    """Process command-line arguments
+
+    Returns an options object holding all parsed options
+    """
+    parser = argparse.ArgumentParser(
+        description="Submit a command to a compute node via qsub. "
+        "Defaults are set up to work well on cheyenne.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser.add_argument("-A", "--account", default="P93300601",
+                        help="Account")
+
+    parser.add_argument("-d", "--num-nodes", type=int, default=1,
+                        help="Number of noDes")
+
+    parser.add_argument("-n", "--num-cpus", type=int, default=36,
+                        help="Number of CPUs")
+
+    parser.add_argument("-q", "--queue", default="regular",
+                        help="Queue")
+
+    parser.add_argument("-t", "--num-tasks", type=int, default=1,
+                        help="Number of MPI Tasks")
+
+    parser.add_argument("-w", "--walltime", default="06:00:00",
+                        help="Walltime")
+
+    parser.add_argument("--extra-qsub-args",
+                        default="-l inception=login",
+                        help="Extra args to pass to qsub")
+
+    parser.add_argument("command", nargs=argparse.REMAINDER,
+                        help="Command to run")
+
+    options = parser.parse_args()
+    return options
+
+def build_qsub_command(options):
+    """Given the options, build the qsub command
+    """
+
+    select = "select={nodes}:ncpus={cpus}:mpiprocs={tasks}".format(nodes=options.num_nodes,
+                                                                   cpus=options.num_cpus,
+                                                                   tasks=options.num_tasks)
+    extra_qsub_args_list = options.extra_qsub_args.split()
+    qsub_cmd = ["qsub",
+                "-l", select,
+                "-A", options.account,
+                "-q", options.queue,
+                "-l", "walltime={}".format(options.walltime)]
+    qsub_cmd.extend(extra_qsub_args_list)
+
+    return qsub_cmd
+
+def _main_func():
+    options = commandline_options()
+    qsub_cmd = build_qsub_command(options)
+    print("Running: {}".format(' '.join(qsub_cmd)))
+
+    # I'm not sure if we need stdout=subprocess.PIPE, but that's what's
+    # done in examples I can find
+    qsub_process = subprocess.Popen(qsub_cmd,
+                                    stdout=subprocess.PIPE,
+                                    stdin=subprocess.PIPE)
+    command_string = ' '.join(options.command)
+    (out, err) = qsub_process.communicate(command_string)
+    if err:
+        print("ERROR:\n{}".format(err))
+    if out:
+        print("OUTPUT:\n{}".format(out))
+
+if __name__ == "__main__":
+    _main_func()
