@@ -45,7 +45,7 @@ def commandline_options():
     parser.add_argument("command", nargs=argparse.REMAINDER,
                         help="Command to run. Can include "
                         "arguments. Does not need to be quoted.")
-    
+
     options = parser.parse_args()
     return options
 
