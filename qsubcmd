@@ -43,8 +43,9 @@ def commandline_options():
                         help="Extra args to pass to qsub")
 
     parser.add_argument("command", nargs=argparse.REMAINDER,
-                        help="Command to run")
-
+                        help="Command to run. Can include "
+                        "arguments. Does not need to be quoted.")
+    
     options = parser.parse_args()
     return options
 
