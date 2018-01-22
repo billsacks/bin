@@ -1,7 +1,13 @@
 #!/usr/bin/env python
-"""Submit a command to a compute node via qsub
+"""Submit a command to a compute node via qsub.
 
-Defaults are set up to work well on cheyenne
+Defaults are set up to work well on cheyenne.
+
+Example usage:
+
+   qsubcmd ./myscript -a -b 3 --foo bar
+
+   This will submit myscript with the given arguments
 
 Author: Bill Sacks <sacks@ucar.edu>
 """
@@ -10,15 +16,21 @@ from __future__ import print_function
 import argparse
 import subprocess
 
-def commandline_options():
+class RawDescriptionWithDefaultsFormatter(argparse.ArgumentDefaultsHelpFormatter,
+                                          argparse.RawDescriptionHelpFormatter):
+    """Gives the benefits of both ArgumentDefaultsHelpFormatter and
+    RawDescriptionHelpFormatter
+    """
+    pass
+
+def commandline_options(description):
     """Process command-line arguments
 
     Returns an options object holding all parsed options
     """
     parser = argparse.ArgumentParser(
-        description="Submit a command to a compute node via qsub. "
-        "Defaults are set up to work well on cheyenne.",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        description=description,
+        formatter_class=RawDescriptionWithDefaultsFormatter)
 
     parser.add_argument("-A", "--account", default="P93300601",
                         help="Account")
@@ -66,8 +78,8 @@ def build_qsub_command(options):
 
     return qsub_cmd
 
-def _main_func():
-    options = commandline_options()
+def _main_func(description):
+    options = commandline_options(description)
     qsub_cmd = build_qsub_command(options)
     print("Running: {}".format(' '.join(qsub_cmd)))
 
@@ -84,4 +96,4 @@ def _main_func():
         print("OUTPUT:\n{}".format(out))
 
 if __name__ == "__main__":
-    _main_func()
+    _main_func(__doc__)
