@@ -5,7 +5,7 @@ Defaults are set up to work well on cheyenne.
 
 Example usage:
 
-   qsubcmd ./myscript -a -b 3 --foo bar
+   qsubcmd "./myscript --foo bar"
 
    This will submit myscript with the given arguments
 
@@ -54,9 +54,9 @@ def commandline_options(description):
                         default="-l inception=login",
                         help="Extra args to pass to qsub")
 
-    parser.add_argument("command", nargs=argparse.REMAINDER,
-                        help="Command to run. Can include "
-                        "arguments. Does not need to be quoted.")
+    parser.add_argument("command",
+                        help="Command to run. Must be quoted if the "
+                        "command includes arguments.")
 
     options = parser.parse_args()
     return options
@@ -88,8 +88,7 @@ def _main_func(description):
     qsub_process = subprocess.Popen(qsub_cmd,
                                     stdout=subprocess.PIPE,
                                     stdin=subprocess.PIPE)
-    command_string = ' '.join(options.command)
-    (out, err) = qsub_process.communicate(command_string)
+    (out, err) = qsub_process.communicate(options.command)
     if err:
         print("ERROR:\n{}".format(err))
     if out:
