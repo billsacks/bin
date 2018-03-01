@@ -41,18 +41,29 @@ def commandline_options(description):
     parser.add_argument("-n", "--num-cpus", type=int, default=36,
                         help="Number of CPUs")
 
-    parser.add_argument("-q", "--queue", default="regular",
-                        help="Queue")
+    parser.add_argument("-q", "--queue",
+                        help="Queue (default depends on whether "
+                        "--small is specified: see documentation for "
+                        "--small for details)")
 
     parser.add_argument("-t", "--num-tasks", type=int, default=1,
                         help="Number of MPI Tasks")
 
-    parser.add_argument("-w", "--walltime", default="06:00:00",
-                        help="Walltime")
+    parser.add_argument("-w", "--walltime",
+                        help="Walltime (default depends on whether "
+                        "--small is specified: see documentation for "
+                        "--small for details)")
 
     parser.add_argument("--extra-qsub-args",
                         default="-l inception=login",
                         help="Extra args to pass to qsub")
+
+    parser.add_argument("--small", action="store_true",
+                        help="If specified, use a default walltime of "
+                        "30 minutes and a default queue of premium; "
+                        "if not specified, use 6 hours and regular. "
+                        "(Has no effect if walltime and queue are "
+                        "specified explicitly.)")
 
     parser.add_argument("command",
                         help="Command to run. Must be quoted if the "
@@ -61,9 +72,43 @@ def commandline_options(description):
     options = parser.parse_args()
     return options
 
+def get_default_walltime(small):
+    """Get a default walltime value
+
+    Args:
+    - small (bool): whether to use defaults appropriate for small jobs
+    """
+
+    if small:
+        return "00:30:00"
+    else:
+        return "06:00:00"
+
+def get_default_queue(small):
+    """Get a default queue value
+
+    Args:
+    - small (bool): whether to use defaults appropriate for small jobs
+    """
+
+    if small:
+        return "premium"
+    else:
+        return "regular"
+
 def build_qsub_command(options):
     """Given the options, build the qsub command
     """
+
+    if options.walltime:
+        walltime = options.walltime
+    else:
+        walltime = get_default_walltime(options.small)
+
+    if options.queue:
+        queue = options.queue
+    else:
+        queue = get_default_queue(options.small)
 
     select = "select={nodes}:ncpus={cpus}:mpiprocs={tasks}".format(nodes=options.num_nodes,
                                                                    cpus=options.num_cpus,
@@ -72,8 +117,8 @@ def build_qsub_command(options):
     qsub_cmd = ["qsub",
                 "-l", select,
                 "-A", options.account,
-                "-q", options.queue,
-                "-l", "walltime={}".format(options.walltime)]
+                "-q", queue,
+                "-l", "walltime={}".format(walltime)]
     qsub_cmd.extend(extra_qsub_args_list)
 
     return qsub_cmd
