@@ -118,7 +118,9 @@ def build_qsub_command(options):
                 "-l", select,
                 "-A", options.account,
                 "-q", queue,
-                "-l", "walltime={}".format(walltime)]
+                "-l", "walltime={}".format(walltime),
+                # Declare the job non-rerunnable:
+                "-r", "n"]
     qsub_cmd.extend(extra_qsub_args_list)
 
     return qsub_cmd
