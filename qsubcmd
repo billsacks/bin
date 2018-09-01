@@ -134,6 +134,7 @@ def _main_func(description):
     # done in examples I can find
     qsub_process = subprocess.Popen(qsub_cmd,
                                     stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE,
                                     stdin=subprocess.PIPE)
     (out, err) = qsub_process.communicate(options.command)
     if err:
