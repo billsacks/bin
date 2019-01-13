@@ -15,6 +15,7 @@ Author: Bill Sacks <sacks@ucar.edu>
 from __future__ import print_function
 import argparse
 import subprocess
+import os
 
 class RawDescriptionWithDefaultsFormatter(argparse.ArgumentDefaultsHelpFormatter,
                                           argparse.RawDescriptionHelpFormatter):
@@ -32,7 +33,9 @@ def commandline_options(description):
         description=description,
         formatter_class=RawDescriptionWithDefaultsFormatter)
 
-    parser.add_argument("-A", "--account", default="P93300601",
+    default_account = os.environ['PROJECT']
+
+    parser.add_argument("-A", "--account", default=default_account,
                         help="Account")
 
     parser.add_argument("-d", "--num-nodes", type=int, default=1,
