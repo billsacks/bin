@@ -9,4 +9,4 @@
 #
 #   pbhighlight -l python
 
-pbpaste | pygmentize -f rtf "$@" | pbcopy
+pbpaste | pygmentize -f rtf -O "fontface=Hack" "$@" | pbcopy
