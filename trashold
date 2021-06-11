@@ -42,7 +42,7 @@ if [ -e $trashdir ]; then
 fi
 mkdir $trashdir
 
-oldfiles=`find * -maxdepth 0 -user sacks -mtime +$n`
+oldfiles=`find * -maxdepth 0 -user ${USER} -mtime +$n`
 ls -Gdlrt $oldfiles
 mv $oldfiles $trashdir
 
