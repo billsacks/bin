@@ -140,7 +140,8 @@ def _main_func(description):
     qsub_process = subprocess.Popen(qsub_cmd,
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE,
-                                    stdin=subprocess.PIPE)
+                                    stdin=subprocess.PIPE,
+                                    universal_newlines=True)
     (out, err) = qsub_process.communicate(options.command)
     if err:
         print("ERROR:\n{}".format(err))
