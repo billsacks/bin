@@ -122,6 +122,8 @@ def build_qsub_command(options):
                 "-A", options.account,
                 "-q", queue,
                 "-l", "walltime={}".format(walltime),
+                # Inherit environment:
+                "-V",
                 # Write output directly into final destination:
                 "-k", "oed",
                 # Declare the job non-rerunnable:
