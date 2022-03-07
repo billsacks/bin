@@ -1,0 +1,5 @@
+#!/bin/bash
+
+cd ~/org
+git add .
+git commit -m "Recent notes"
