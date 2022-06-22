@@ -1,0 +1,3 @@
+#!/bin/bash
+
+qsub -I -l select=1:ncpus=36:mpiprocs=36 -l walltime=06:00:00 -q regular -A P93300606
