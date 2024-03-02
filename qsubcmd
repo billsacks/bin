@@ -34,7 +34,7 @@ def commandline_options(description):
         formatter_class=RawDescriptionWithDefaultsFormatter)
 
     default_account = os.environ.get('PROJECT')
-    default_cpus = 36
+    default_cpus = 128
 
     parser.add_argument("-A", "--account", default=default_account,
                         help="Account")
@@ -59,13 +59,13 @@ def commandline_options(description):
                         "--small for details)")
 
     parser.add_argument("--extra-qsub-args",
-                        default="-l inception=login",
+                        default="",
                         help="Extra args to pass to qsub")
 
     parser.add_argument("--small", action="store_true",
                         help="If specified, use a default walltime of "
-                        "30 minutes and a default queue of premium; "
-                        "if not specified, use 6 hours and regular. "
+                        "30 minutes and a default queue of main; "
+                        "if not specified, use 4 hours and main. "
                         "(Has no effect if walltime and queue are "
                         "specified explicitly.)")
 
@@ -86,7 +86,7 @@ def get_default_walltime(small):
     if small:
         return "00:30:00"
     else:
-        return "06:00:00"
+        return "04:00:00"
 
 def get_default_queue(small):
     """Get a default queue value
@@ -95,10 +95,11 @@ def get_default_queue(small):
     - small (bool): whether to use defaults appropriate for small jobs
     """
 
+    # For derecho, we currently use the same queue regardless of "small"
     if small:
-        return "premium"
+        return "main"
     else:
-        return "regular"
+        return "main"
 
 def build_qsub_command(options):
     """Given the options, build the qsub command
