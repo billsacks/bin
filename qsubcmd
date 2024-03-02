@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 """Submit a command to a compute node via qsub.
 
-Defaults are set up to work well on cheyenne.
+Defaults are set up to work well on derecho.
 
 Example usage:
 
-   qsubcmd "./myscript --foo bar"
+   qsubcmd "${PWD}/myscript --foo bar"
 
    This will submit myscript with the given arguments
 
@@ -71,7 +71,11 @@ def commandline_options(description):
 
     parser.add_argument("command",
                         help="Command to run. Must be quoted if the "
-                        "command includes arguments.")
+                        "command includes arguments. "
+                        "On derecho and probably some other systems, "
+                        "the job runs from your home directory, so "
+                        "you may need to specify the full path to "
+                        "the command.")
 
     options = parser.parse_args()
     return options
